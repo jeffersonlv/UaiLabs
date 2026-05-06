@@ -56,7 +56,14 @@
                 <td class="fw-medium">{{ $act->title }}</td>
                 @if($companies)<td class="text-muted small">{{ $act->company?->name ?? '—' }}</td>@endif
                 <td>{{ $act->category->name ?? '—' }}</td>
-                <td>{{ $act->unit->name ?? 'Todas' }}</td>
+                <td>
+                    @if($act->unit)
+                        <span class="fw-medium">{{ $act->unit->name }}</span>
+                        <span class="badge bg-secondary ms-1" style="font-size:.65rem">{{ $act->unit->typeLabel() }}</span>
+                    @else
+                        <span class="text-muted small fst-italic">Geral</span>
+                    @endif
+                </td>
                 <td class="text-capitalize">{{ $act->periodicity }}</td>
                 <td class="text-center">{{ $act->sequence_required ? 'Ordem '.$act->sequence_order : '—' }}</td>
                 <td class="text-center">

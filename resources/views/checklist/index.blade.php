@@ -49,11 +49,18 @@
     @endif
     <div class="d-flex align-items-start gap-3 p-3 {{ !$loop->last ? 'border-bottom' : '' }}">
         <div class="flex-grow-1">
-            <div class="d-flex align-items-center gap-2 mb-1">
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                 @if($act->sequence_required)
                     <span class="badge text-white" style="background:#6f42c1!important">Seq. {{ $act->sequence_order }}</span>
                 @endif
                 <span class="fw-medium {{ $done ? 'text-decoration-line-through text-muted' : '' }}">{{ $act->title }}</span>
+                @if($act->unit_id)
+                    <span class="badge bg-light text-secondary border" style="font-size:.65rem;font-weight:400">
+                        <i class="bi bi-building" style="font-size:.6rem"></i> {{ $act->unit->name }}
+                    </span>
+                @else
+                    <span class="badge bg-light text-muted border" style="font-size:.65rem;font-weight:400">Geral</span>
+                @endif
             </div>
             @if($act->description)
                 <small class="text-muted">{{ $act->description }}</small>

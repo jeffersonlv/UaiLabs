@@ -24,13 +24,19 @@
                 </select>
             </div>
             <div class="mb-3">
-                <label class="form-label">Unidade (opcional)</label>
+                <label class="form-label">Unidade</label>
                 <select name="unit_id" class="form-select">
-                    <option value="">Todas as unidades</option>
+                    <option value="">Geral — aparece para todas as unidades</option>
                     @foreach($units as $unit)
-                        <option value="{{ $unit->id }}" {{ old('unit_id', $activity->unit_id) == $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
+                        <option value="{{ $unit->id }}" {{ old('unit_id', $activity->unit_id) == $unit->id ? 'selected' : '' }}>
+                            {{ $unit->name }} — {{ $unit->typeLabel() }}
+                        </option>
                     @endforeach
                 </select>
+                <div class="form-text">
+                    Selecione uma unidade específica se esta atividade for exclusiva dela.
+                    Deixe "Geral" para que apareça em todas.
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Periodicidade</label>
