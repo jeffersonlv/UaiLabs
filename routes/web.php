@@ -33,10 +33,11 @@ Route::middleware(['auth', 'active'])->group(function () {
                 Route::resource('categories', CategoryController::class);
                 Route::resource('activities', ActivityController::class);
             });
+        });
 
+        // ── Filiais (admin da empresa) ───────────────────────────
         Route::middleware('admin')->group(function () {
             Route::resource('units', UnitController::class)->except('show');
-        });
         });
 
         // ── Módulo: Controle de Estoque ──────────────────────────
@@ -60,7 +61,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::patch('users/{user}/toggle', [UserAdminController::class, 'toggle'])->name('users.toggle');
 
             // Filiais por empresa
-            Route::resource('companies/{company}/units', AdminUnitController::class)->except('show')->names('admin.units');
+            Route::resource('companies/{company}/units', AdminUnitController::class)->except('show')->names('units');
 
             // Permissões de módulos por empresa / usuário
             Route::get('companies/{company}/modules', [ModulePermissionController::class, 'index'])->name('modules.index');
