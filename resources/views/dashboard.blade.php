@@ -6,7 +6,19 @@
     <div>
         <h4 class="mb-0">Dashboard</h4>
         @if(auth()->user()->isSuperAdmin())
-            <span class="text-muted small">Todas as empresas</span>
+            <span class="text-muted small">
+                @if($filterCompany)
+                    {{ $filterCompany->name }}
+                    @if($visibleUnits->count() === 1)
+                        — <span class="fw-semibold">{{ $visibleUnits->first()->name }}</span>
+                        <span class="badge bg-secondary ms-1" style="font-size:.65rem">{{ $visibleUnits->first()->typeLabel() }}</span>
+                    @elseif($selectedUnitId === null)
+                        — todas as unidades
+                    @endif
+                @else
+                    Todas as empresas
+                @endif
+            </span>
         @elseif($visibleUnits->isEmpty())
             <span class="text-muted small">{{ auth()->user()->company?->name }}</span>
         @elseif($visibleUnits->count() === 1)
@@ -39,7 +51,14 @@
         <form method="GET" action="{{ route('dashboard') }}" class="row g-2 align-items-end">
             {{-- Hoje --}}
             <div class="col-auto">
-                <a href="{{ route('dashboard') }}" class="btn btn-sm {{ !$isRange && $date->isToday() ? 'btn-primary' : 'btn-outline-primary' }}">
+                @php
+                    $todayParams = array_filter([
+                        'company_id' => $selectedCompanyId ?? null,
+                        'unit_id'    => $selectedUnitId ?? null,
+                    ]);
+                @endphp
+                <a href="{{ route('dashboard', $todayParams) }}"
+                   class="btn btn-sm {{ !$isRange && $date->isToday() ? 'btn-primary' : 'btn-outline-primary' }}">
                     Hoje
                 </a>
             </div>
@@ -73,6 +92,49 @@
                 </div>
                 <button type="submit" class="btn btn-sm btn-outline-secondary">Ver período</button>
             </div>
+
+            @if($allCompanies->isNotEmpty())
+            <div class="col-auto d-flex gap-2 align-items-end ms-auto">
+                <div>
+                    <label class="form-label form-label-sm mb-1 text-muted">Empresa</label>
+                    <select name="company_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:180px">
+                        <option value="">Todas as empresas</option>
+                        @foreach($allCompanies as $c)
+                            <option value="{{ $c->id }}" {{ $selectedCompanyId == $c->id ? 'selected' : '' }}>
+                                {{ $c->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @if($companyUnits->isNotEmpty())
+                <div>
+                    <label class="form-label form-label-sm mb-1 text-muted">Unidade</label>
+                    <select name="unit_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:160px">
+                        <option value="">Todas</option>
+                        @foreach($companyUnits as $unit)
+                            <option value="{{ $unit->id }}" {{ $selectedUnitId == $unit->id ? 'selected' : '' }}>
+                                {{ $unit->name }} — {{ $unit->typeLabel() }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+            </div>
+            @elseif($companyUnits->isNotEmpty())
+            <div class="col-auto d-flex gap-2 align-items-end ms-auto">
+                <div>
+                    <label class="form-label form-label-sm mb-1 text-muted">Unidade</label>
+                    <select name="unit_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:180px">
+                        <option value="">Todas as unidades</option>
+                        @foreach($companyUnits as $unit)
+                            <option value="{{ $unit->id }}" {{ $selectedUnitId == $unit->id ? 'selected' : '' }}>
+                                {{ $unit->name }} — {{ $unit->typeLabel() }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            @endif
         </form>
     </div>
 </div>

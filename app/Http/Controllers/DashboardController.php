@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\SupportRequest;
 use App\Models\TaskOccurrence;
 use App\Models\Unit;
@@ -35,15 +36,37 @@ class DashboardController extends Controller
                 : Carbon::today();
         }
 
-        // ── Query base ───────────────────────────────────────────
-        $unitIds = $user->visibleUnitIds();
+        // ── Filtros de empresa/unidade ────────────────────────────
+        $unitIds          = $user->visibleUnitIds();
+        $allCompanies     = collect();
+        $companyUnits     = collect();
+        $selectedCompanyId = null;
+        $selectedUnitId   = null;
+        $filterCompany    = $company; // empresa efetiva para a query
 
+        if ($user->isSuperAdmin()) {
+            $allCompanies      = Company::orderBy('name')->get();
+            $selectedCompanyId = $request->input('company_id');
+            $selectedUnitId    = $request->input('unit_id');
+
+            if ($selectedCompanyId) {
+                $filterCompany = $allCompanies->firstWhere('id', $selectedCompanyId);
+                $companyUnits  = Unit::where('company_id', $selectedCompanyId)->orderBy('name')->get();
+            }
+        } elseif ($user->isAdmin() && $company) {
+            $companyUnits   = Unit::where('company_id', $company->id)->orderBy('name')->get();
+            $selectedUnitId = $request->input('unit_id');
+        }
+
+        // ── Query base ───────────────────────────────────────────
         $base = TaskOccurrence::query();
-        if ($company) {
-            $base->where('company_id', $company->id);
+        if ($filterCompany) {
+            $base->where('company_id', $filterCompany->id);
         }
         if ($unitIds !== null) {
             $base->whereIn('unit_id', $unitIds);
+        } elseif ($selectedUnitId) {
+            $base->where('unit_id', $selectedUnitId);
         }
 
         if ($isRange) {
@@ -68,8 +91,9 @@ class DashboardController extends Controller
         $avgNot  = $isRange ? round(($overdue + $pending) / $days, 1) : null;
 
         // ── Performance por colaborador ───────────────────────────
-        $byUser = User::when($company, fn($q) => $q->where('company_id', $company->id))
+        $byUser = User::when($filterCompany, fn($q) => $q->where('company_id', $filterCompany->id))
             ->when($unitIds !== null, fn($q) => $q->whereHas('units', fn($u) => $u->whereIn('units.id', $unitIds)))
+            ->when($selectedUnitId, fn($q) => $q->whereHas('units', fn($u) => $u->where('units.id', $selectedUnitId)))
             ->whereNotIn('role', ['superadmin'])
             ->withCount(['completedOccurrences as done_count' => function ($q) use ($isRange, $date, $dateFrom, $dateTo) {
                 if ($isRange) {
@@ -127,12 +151,16 @@ class DashboardController extends Controller
 
         $visibleUnits = $unitIds !== null
             ? Unit::whereIn('id', $unitIds)->orderBy('name')->get()
-            : ($company ? Unit::where('company_id', $company->id)->orderBy('name')->get() : collect());
+            : ($selectedUnitId
+                ? Unit::where('id', $selectedUnitId)->get()
+                : ($filterCompany ? Unit::where('company_id', $filterCompany->id)->orderBy('name')->get() : collect()));
 
         return view('dashboard', compact(
             'total', 'done', 'pending', 'overdue', 'rate',
             'byUser', 'date', 'dateFrom', 'dateTo', 'isRange',
-            'days', 'avgDone', 'avgNot', 'daily', 'supportStats', 'visibleUnits'
+            'days', 'avgDone', 'avgNot', 'daily', 'supportStats',
+            'visibleUnits', 'companyUnits', 'selectedUnitId',
+            'allCompanies', 'selectedCompanyId', 'filterCompany'
         ));
     }
 }
