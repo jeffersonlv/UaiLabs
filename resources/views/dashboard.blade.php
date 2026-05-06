@@ -3,7 +3,12 @@
 
 {{-- ── Cabeçalho ─────────────────────────────────────────── --}}
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h4 class="mb-0">Dashboard</h4>
+    <div>
+        <h4 class="mb-0">Dashboard</h4>
+        @if(auth()->user()->company)
+            <span class="text-muted small">{{ auth()->user()->company->name }}</span>
+        @endif
+    </div>
     <span class="text-muted small">
         @if($isRange)
             {{ $dateFrom->format('d/m/Y') }} — {{ $dateTo->format('d/m/Y') }}

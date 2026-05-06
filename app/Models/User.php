@@ -23,6 +23,19 @@ class User extends Authenticatable
     public function isAdminOrAbove(): bool { return in_array($this->role, ['superadmin', 'admin']); }
     public function isManagerOrAbove(): bool { return in_array($this->role, ['superadmin', 'admin', 'manager']); }
 
+    /**
+     * IDs das unidades visíveis para o usuário.
+     * Admin/superadmin: null (sem filtro — vê tudo da empresa).
+     * Manager/staff: apenas as unidades atribuídas via user_units.
+     */
+    public function visibleUnitIds(): ?array
+    {
+        if ($this->isAdminOrAbove()) {
+            return null;
+        }
+        return $this->units()->pluck('units.id')->toArray();
+    }
+
     public function company() { return $this->belongsTo(Company::class); }
     public function units() { return $this->belongsToMany(Unit::class, 'user_units'); }
     public function completedOccurrences() { return $this->hasMany(TaskOccurrence::class, 'completed_by'); }

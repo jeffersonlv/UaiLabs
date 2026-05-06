@@ -10,13 +10,17 @@
 <body class="bg-light">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
-    <a class="navbar-brand fw-semibold" href="{{ route('dashboard') }}">UaiLabs</a>
+    @inject('moduleAccess', 'App\Services\ModuleAccessService')
+    @php $authUser = auth()->user(); @endphp
+    <a class="navbar-brand fw-semibold" href="{{ route('dashboard') }}">
+        @if($authUser->company)
+            <span class="text-white-50 fw-normal" style="font-size:.75rem">{{ $authUser->company->name }}</span>
+        @endif
+    </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
         <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navMenu">
-        @inject('moduleAccess', 'App\Services\ModuleAccessService')
-        @php $authUser = auth()->user(); @endphp
         <ul class="navbar-nav me-auto">
             <li class="nav-item"><a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a></li>
 

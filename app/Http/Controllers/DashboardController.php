@@ -35,9 +35,14 @@ class DashboardController extends Controller
         }
 
         // ── Query base ───────────────────────────────────────────
+        $unitIds = $user->visibleUnitIds();
+
         $base = TaskOccurrence::query();
         if ($company) {
             $base->where('company_id', $company->id);
+        }
+        if ($unitIds !== null) {
+            $base->whereIn('unit_id', $unitIds);
         }
 
         if ($isRange) {
@@ -63,6 +68,7 @@ class DashboardController extends Controller
 
         // ── Performance por colaborador ───────────────────────────
         $byUser = User::when($company, fn($q) => $q->where('company_id', $company->id))
+            ->when($unitIds !== null, fn($q) => $q->whereHas('units', fn($u) => $u->whereIn('units.id', $unitIds)))
             ->whereNotIn('role', ['superadmin'])
             ->withCount(['completedOccurrences as done_count' => function ($q) use ($isRange, $date, $dateFrom, $dateTo) {
                 if ($isRange) {
