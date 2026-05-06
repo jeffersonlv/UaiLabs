@@ -35,10 +35,6 @@ Route::middleware(['auth', 'active'])->group(function () {
             });
         });
 
-        // ── Filiais (admin da empresa) ───────────────────────────
-        Route::middleware('admin')->group(function () {
-            Route::resource('units', UnitController::class)->except('show');
-        });
 
         // ── Módulo: Controle de Estoque ──────────────────────────
         Route::middleware('module:estoque')->group(function () {
