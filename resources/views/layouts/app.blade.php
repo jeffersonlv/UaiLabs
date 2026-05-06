@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UaiLabs</title>
+    <title>
+        @php
+            $titleUser  = auth()->user();
+            if ($titleUser?->company) $titleParts[] = $titleUser->company->name;
+            if ($titleUser && !$titleUser->isAdminOrAbove()) {
+                $units = $titleUser->units;
+                if ($units->count() === 1) $titleParts[] = $units->first()->name;
+            }
+        @endphp
+        {{ implode(' — ', $titleParts) }}
+        @hasSection('title') | @yield('title') @endif
+    </title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
