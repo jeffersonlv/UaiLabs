@@ -9,7 +9,9 @@ use App\Http\Controllers\TaskOccurrenceController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\ModulePermissionController;
 use App\Http\Controllers\Admin\SupportRequestAdminController;
+use App\Http\Controllers\Admin\UnitController as AdminUnitController;
 use App\Http\Controllers\Admin\UserAdminController;
+use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active'])->group(function () {
@@ -31,6 +33,10 @@ Route::middleware(['auth', 'active'])->group(function () {
                 Route::resource('categories', CategoryController::class);
                 Route::resource('activities', ActivityController::class);
             });
+
+        Route::middleware('admin')->group(function () {
+            Route::resource('units', UnitController::class)->except('show');
+        });
         });
 
         // ── Módulo: Controle de Estoque ──────────────────────────
@@ -52,6 +58,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::patch('companies/{company}/toggle', [CompanyController::class, 'toggle'])->name('companies.toggle');
             Route::resource('users', UserAdminController::class)->except('show');
             Route::patch('users/{user}/toggle', [UserAdminController::class, 'toggle'])->name('users.toggle');
+
+            // Filiais por empresa
+            Route::resource('companies/{company}/units', AdminUnitController::class)->except('show')->names('admin.units');
 
             // Permissões de módulos por empresa / usuário
             Route::get('companies/{company}/modules', [ModulePermissionController::class, 'index'])->name('modules.index');

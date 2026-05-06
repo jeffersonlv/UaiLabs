@@ -43,6 +43,9 @@
                     </span>
                 </td>
                 <td class="text-end">
+                    <a href="{{ route('admin.units.index', $company) }}" class="btn btn-sm btn-outline-secondary" title="Gerenciar filiais">
+                        <i class="bi bi-building"></i> Filiais
+                    </a>
                     <a href="{{ route('admin.modules.index', $company) }}" class="btn btn-sm btn-outline-info" title="Gerenciar módulos">
                         <i class="bi bi-puzzle"></i> Módulos
                     </a>

@@ -55,6 +55,9 @@
                 @endif
             @endforeach
 
+            @if($authUser->isAdmin())
+                <li class="nav-item"><a class="nav-link" href="{{ route('units.index') }}">Filiais</a></li>
+            @endif
             @if($authUser->isManagerOrAbove())
                 <li class="nav-item"><a class="nav-link" href="{{ route('audit-log.index') }}">Log de Atividades</a></li>
             @endif

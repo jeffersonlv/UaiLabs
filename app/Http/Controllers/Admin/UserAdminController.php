@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Models\Unit;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -24,8 +25,9 @@ class UserAdminController extends Controller
 
     public function create()
     {
-        $companies = Company::where('active', true)->orderBy('name')->get();
-        return view('admin.users.form', ['user' => new User, 'companies' => $companies]);
+        $companies    = Company::where('active', true)->orderBy('name')->get();
+        $unitsByCompany = Unit::where('active', true)->orderBy('name')->get()->groupBy('company_id');
+        return view('admin.users.form', ['user' => new User, 'companies' => $companies, 'unitsByCompany' => $unitsByCompany]);
     }
 
     public function store(Request $request)
@@ -42,14 +44,16 @@ class UserAdminController extends Controller
         $data['password'] = Hash::make($data['password']);
         $data['active']   = $request->boolean('active');
         $newUser = User::create($data);
+        $newUser->units()->sync($request->input('unit_ids', []));
         AuditLogger::crud('user.created', 'user', $newUser->id, $newUser->name, ['role' => $newUser->role]);
         return redirect()->route('admin.users.index')->with('success', 'Usuário criado com sucesso.');
     }
 
     public function edit(User $user)
     {
-        $companies = Company::where('active', true)->orderBy('name')->get();
-        return view('admin.users.form', compact('user', 'companies'));
+        $companies      = Company::where('active', true)->orderBy('name')->get();
+        $unitsByCompany = Unit::where('active', true)->orderBy('name')->get()->groupBy('company_id');
+        return view('admin.users.form', compact('user', 'companies', 'unitsByCompany'));
     }
 
     public function update(Request $request, User $user)
@@ -70,6 +74,7 @@ class UserAdminController extends Controller
         }
         $data['active'] = $request->boolean('active');
         $user->update($data);
+        $user->units()->sync($request->input('unit_ids', []));
         AuditLogger::crud('user.updated', 'user', $user->id, $user->name, ['role' => $user->role]);
         return redirect()->route('admin.users.index')->with('success', 'Usuário atualizado.');
     }

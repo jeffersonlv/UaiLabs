@@ -62,7 +62,7 @@
 
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Empresa</label>
-                    <select name="company_id" class="form-select @error('company_id') is-invalid @enderror">
+                    <select name="company_id" id="company_id" class="form-select @error('company_id') is-invalid @enderror">
                         <option value="">— Nenhuma (Super Admin) —</option>
                         @foreach($companies as $company)
                         <option value="{{ $company->id }}"
@@ -72,6 +72,13 @@
                         @endforeach
                     </select>
                     @error('company_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Filiais / Unidades</label>
+                    <div id="units-container" class="d-flex flex-wrap gap-3 mt-1">
+                        <span class="text-muted small">Selecione uma empresa para ver as unidades.</span>
+                    </div>
                 </div>
 
                 <div class="col-12">
@@ -91,4 +98,39 @@
         </form>
     </div>
 </div>
+@push('scripts')
+<script>
+const unitsByCompany = @json($unitsByCompany);
+const selectedIds    = @json($user->exists ? $user->units->pluck('id') : collect());
+const typeLabels     = { matriz: 'Matriz', filial: 'Filial', quiosque: 'Quiosque', dark_kitchen: 'Dark Kitchen' };
+
+function updateUnits() {
+    const companyId  = document.getElementById('company_id').value;
+    const container  = document.getElementById('units-container');
+    const units      = unitsByCompany[companyId] || [];
+
+    if (!companyId || units.length === 0) {
+        container.innerHTML = '<span class="text-muted small">' +
+            (companyId ? 'Nenhuma unidade cadastrada para esta empresa.' : 'Selecione uma empresa para ver as unidades.') +
+            '</span>';
+        return;
+    }
+
+    container.innerHTML = units.map(u => `
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="unit_ids[]"
+                   id="unit-${u.id}" value="${u.id}"
+                   ${selectedIds.includes(u.id) ? 'checked' : ''}>
+            <label class="form-check-label" for="unit-${u.id}">
+                ${u.name}
+                <span class="badge bg-secondary ms-1" style="font-size:.7rem">${typeLabels[u.type] ?? u.type}</span>
+            </label>
+        </div>
+    `).join('');
+}
+
+document.getElementById('company_id').addEventListener('change', updateUnits);
+updateUnits();
+</script>
+@endpush
 @endsection
