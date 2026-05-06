@@ -32,6 +32,7 @@ class TaskOccurrenceController extends Controller
             ->sortBy(fn($o) => [
                 $o->activity->unit->name ?? 'ZZZ',
                 $o->activity->category->name ?? 'ZZZ',
+                in_array($o->status, ['DONE', 'REOPENED']) ? 1 : 0,
                 $o->activity->sequence_required ? 0 : 1,
                 $o->activity->sequence_order ?? 999,
                 $o->activity->title,

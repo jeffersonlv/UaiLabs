@@ -35,11 +35,18 @@
 @foreach($unitOccurrences->groupBy(fn($o) => $o->activity->category->name ?? 'Sem categoria') as $category => $items)
 <h6 class="text-uppercase text-muted small mb-2 {{ $multiUnit ? 'ms-3' : '' }}">{{ $category }}</h6>
 <div class="card border-0 shadow-sm mb-4">
-    @foreach($items as $occ)
+    @php $shownDoneDivider = false; @endphp
+@foreach($items as $occ)
     @php
         $act  = $occ->activity;
         $done = in_array($occ->status, ['DONE', 'REOPENED']);
     @endphp
+    @if($done && !$shownDoneDivider)
+        @php $shownDoneDivider = true; @endphp
+        <div class="px-3 py-2 bg-success bg-opacity-10 border-bottom border-top">
+            <small class="text-success fw-semibold"><i class="bi bi-check2-all me-1"></i>Concluídas</small>
+        </div>
+    @endif
     <div class="d-flex align-items-start gap-3 p-3 {{ !$loop->last ? 'border-bottom' : '' }}">
         <div class="flex-grow-1">
             <div class="d-flex align-items-center gap-2 mb-1">
