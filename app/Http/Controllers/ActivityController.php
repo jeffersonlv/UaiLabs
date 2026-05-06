@@ -5,6 +5,7 @@ use App\Models\Activity;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Unit;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
 class ActivityController extends Controller
@@ -52,12 +53,13 @@ class ActivityController extends Controller
     public function store(Request $request)
     {
         $request->validate(['title' => 'required|string|max:150', 'category_id' => 'required|exists:categories,id', 'periodicity' => 'required']);
-        Activity::create($request->only('title','description','category_id','unit_id','periodicity','sequence_order') + [
+        $act = Activity::create($request->only('title','description','category_id','unit_id','periodicity','sequence_order') + [
             'company_id'        => $this->companyId(),
             'sequence_required' => $request->boolean('sequence_required'),
             'active'            => true,
             'created_by'        => auth()->id(),
         ]);
+        AuditLogger::crud('activity.created', 'activity', $act->id, $act->title);
         return redirect()->route('activities.index')->with('success', 'Atividade criada.');
     }
 
@@ -77,6 +79,7 @@ class ActivityController extends Controller
             'sequence_required' => $request->boolean('sequence_required'),
             'active'            => $request->boolean('active'),
         ]);
+        AuditLogger::crud('activity.updated', 'activity', $activity->id, $activity->title);
         return redirect()->route('activities.index')->with('success', 'Atividade atualizada.');
     }
 
@@ -84,6 +87,7 @@ class ActivityController extends Controller
     {
         abort_if($activity->company_id !== $this->companyId(), 403);
         $activity->update(['active' => false]);
+        AuditLogger::crud('activity.disabled', 'activity', $activity->id, $activity->title);
         return redirect()->route('activities.index')->with('success', 'Atividade desativada.');
     }
 }

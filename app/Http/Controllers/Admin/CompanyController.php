@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -35,7 +36,8 @@ class CompanyController extends Controller
             'active' => 'boolean',
         ]);
         $data['active'] = $request->boolean('active');
-        Company::create($data);
+        $company = Company::create($data);
+        AuditLogger::crud('company.created', 'company', $company->id, $company->name);
         return redirect()->route('admin.companies.index')->with('success', 'Empresa criada com sucesso.');
     }
 
@@ -55,12 +57,14 @@ class CompanyController extends Controller
         ]);
         $data['active'] = $request->boolean('active');
         $company->update($data);
+        AuditLogger::crud('company.updated', 'company', $company->id, $company->name);
         return redirect()->route('admin.companies.index')->with('success', 'Empresa atualizada.');
     }
 
     public function toggle(Company $company)
     {
         $company->update(['active' => !$company->active]);
+        AuditLogger::crud('company.toggled', 'company', $company->id, $company->name, ['ativo' => $company->active]);
         return back()->with('success', 'Status da empresa atualizado.');
     }
 
@@ -69,6 +73,7 @@ class CompanyController extends Controller
         if ($company->users()->exists()) {
             return back()->with('error', 'Não é possível excluir uma empresa com usuários vinculados.');
         }
+        AuditLogger::crud('company.deleted', 'company', $company->id, $company->name);
         $company->delete();
         return redirect()->route('admin.companies.index')->with('success', 'Empresa excluída.');
     }

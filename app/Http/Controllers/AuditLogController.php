@@ -42,7 +42,8 @@ class AuditLogController extends Controller
                 $query->where('company_id', $selectedCompany);
             }
         } else {
-            $query->where('company_id', $user->company_id);
+            $query->where('company_id', $user->company_id)
+                  ->whereHas('user', fn($q) => $q->where('role', '!=', 'superadmin'));
         }
 
         if ($selectedUser) {
@@ -67,10 +68,24 @@ class AuditLogController extends Controller
         $companies = $user->isSuperAdmin() ? Company::orderBy('name')->get() : collect();
 
         $actions = [
-            'task.complete' => 'Concluiu tarefa',
-            'task.reopen'   => 'Reexecutou tarefa',
-            'login'         => 'Login',
-            'logout'        => 'Logout',
+            'task.complete'    => 'Concluiu tarefa',
+            'task.reopen'      => 'Reexecutou tarefa',
+            'login'            => 'Login',
+            'logout'           => 'Logout',
+            'category.created' => 'Criou categoria',
+            'category.updated' => 'Atualizou categoria',
+            'category.disabled'=> 'Desativou categoria',
+            'activity.created' => 'Criou atividade',
+            'activity.updated' => 'Atualizou atividade',
+            'activity.disabled'=> 'Desativou atividade',
+            'company.created'  => 'Criou empresa',
+            'company.updated'  => 'Atualizou empresa',
+            'company.toggled'  => 'Alterou status empresa',
+            'company.deleted'  => 'Excluiu empresa',
+            'user.created'     => 'Criou usuário',
+            'user.updated'     => 'Atualizou usuário',
+            'user.toggled'     => 'Alterou acesso usuário',
+            'user.deleted'     => 'Excluiu usuário',
         ];
 
         return view('audit-log.index', compact(

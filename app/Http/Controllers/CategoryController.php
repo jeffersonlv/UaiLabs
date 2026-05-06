@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Company;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -43,7 +44,8 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate(['name' => 'required|string|max:100']);
-        Category::create(['name' => $request->name, 'description' => $request->description, 'company_id' => $this->companyId(), 'active' => true]);
+        $cat = Category::create(['name' => $request->name, 'description' => $request->description, 'company_id' => $this->companyId(), 'active' => true]);
+        AuditLogger::crud('category.created', 'category', $cat->id, $cat->name);
         return redirect()->route('categories.index')->with('success', 'Categoria criada.');
     }
 
@@ -58,6 +60,7 @@ class CategoryController extends Controller
         abort_if($category->company_id !== $this->companyId(), 403);
         $request->validate(['name' => 'required|string|max:100']);
         $category->update(['name' => $request->name, 'description' => $request->description, 'active' => $request->boolean('active')]);
+        AuditLogger::crud('category.updated', 'category', $category->id, $category->name);
         return redirect()->route('categories.index')->with('success', 'Categoria atualizada.');
     }
 
@@ -65,6 +68,7 @@ class CategoryController extends Controller
     {
         abort_if($category->company_id !== $this->companyId(), 403);
         $category->update(['active' => false]);
+        AuditLogger::crud('category.disabled', 'category', $category->id, $category->name);
         return redirect()->route('categories.index')->with('success', 'Categoria desativada.');
     }
 }

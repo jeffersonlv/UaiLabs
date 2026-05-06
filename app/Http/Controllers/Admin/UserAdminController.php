@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -40,7 +41,8 @@ class UserAdminController extends Controller
         ]);
         $data['password'] = Hash::make($data['password']);
         $data['active']   = $request->boolean('active');
-        User::create($data);
+        $newUser = User::create($data);
+        AuditLogger::crud('user.created', 'user', $newUser->id, $newUser->name, ['role' => $newUser->role]);
         return redirect()->route('admin.users.index')->with('success', 'Usuário criado com sucesso.');
     }
 
@@ -68,6 +70,7 @@ class UserAdminController extends Controller
         }
         $data['active'] = $request->boolean('active');
         $user->update($data);
+        AuditLogger::crud('user.updated', 'user', $user->id, $user->name, ['role' => $user->role]);
         return redirect()->route('admin.users.index')->with('success', 'Usuário atualizado.');
     }
 
@@ -77,6 +80,7 @@ class UserAdminController extends Controller
             return back()->with('error', 'Não é possível desativar o Super Admin.');
         }
         $user->update(['active' => !$user->active]);
+        AuditLogger::crud('user.toggled', 'user', $user->id, $user->name, ['ativo' => $user->active]);
         return back()->with('success', 'Acesso do usuário ' . ($user->active ? 'habilitado' : 'desabilitado') . '.');
     }
 
@@ -85,6 +89,7 @@ class UserAdminController extends Controller
         if ($user->isSuperAdmin()) {
             return back()->with('error', 'Não é possível excluir o Super Admin.');
         }
+        AuditLogger::crud('user.deleted', 'user', $user->id, $user->name);
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Usuário excluído.');
     }

@@ -42,6 +42,11 @@ class AuditLogger
         ]);
     }
 
+    public static function crud(string $action, string $entity, int $entityId, string $name, array $extra = []): void
+    {
+        self::log($action, $entity, $entityId, array_merge(['nome' => $name], $extra));
+    }
+
     public static function login(): void
     {
         self::log('login', 'user', auth()->id(), [
