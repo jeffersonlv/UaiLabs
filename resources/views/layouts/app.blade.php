@@ -6,6 +6,7 @@
     <title>
         @php
             $titleUser  = auth()->user();
+            $titleParts = ['Admin'];
             if ($titleUser?->company) $titleParts[] = $titleUser->company->name;
             if ($titleUser && !$titleUser->isAdminOrAbove()) {
                 $units = $titleUser->units;
