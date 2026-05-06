@@ -5,8 +5,21 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
         <h4 class="mb-0">Dashboard</h4>
-        @if(auth()->user()->company)
-            <span class="text-muted small">{{ auth()->user()->company->name }}</span>
+        @if(auth()->user()->isSuperAdmin())
+            <span class="text-muted small">Todas as empresas</span>
+        @elseif($visibleUnits->isEmpty())
+            <span class="text-muted small">{{ auth()->user()->company?->name }}</span>
+        @elseif($visibleUnits->count() === 1)
+            <span class="text-muted small">
+                {{ auth()->user()->company?->name }} —
+                <span class="fw-semibold">{{ $visibleUnits->first()->name }}</span>
+                <span class="badge bg-secondary ms-1" style="font-size:.65rem">{{ $visibleUnits->first()->typeLabel() }}</span>
+            </span>
+        @else
+            <span class="text-muted small">
+                {{ auth()->user()->company?->name }} —
+                {{ $visibleUnits->pluck('name')->join(', ') }}
+            </span>
         @endif
     </div>
     <span class="text-muted small">

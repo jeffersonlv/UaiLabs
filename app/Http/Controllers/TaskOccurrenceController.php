@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Activity;
 use App\Models\TaskOccurrence;
 use App\Models\TaskOccurrenceLog;
+use App\Models\Unit;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -23,14 +24,24 @@ class TaskOccurrenceController extends Controller
 
         $unitIds = $user->visibleUnitIds();
 
-        $occurrences = TaskOccurrence::with(['activity.category', 'completedBy', 'logs.user'])
+        $occurrences = TaskOccurrence::with(['activity.category', 'activity.unit', 'completedBy', 'logs.user'])
             ->where('company_id', $user->company_id)
             ->whereDate('period_start', $today)
             ->when($unitIds !== null, fn($q) => $q->whereIn('unit_id', $unitIds))
             ->get()
-            ->sortBy(fn($o) => [$o->activity->sequence_required ? 0 : 1, $o->activity->sequence_order ?? 999, $o->activity->title]);
+            ->sortBy(fn($o) => [
+                $o->activity->unit->name ?? 'ZZZ',
+                $o->activity->category->name ?? 'ZZZ',
+                $o->activity->sequence_required ? 0 : 1,
+                $o->activity->sequence_order ?? 999,
+                $o->activity->title,
+            ]);
 
-        return view('checklist.index', compact('occurrences'));
+        $visibleUnits = $unitIds !== null
+            ? Unit::whereIn('id', $unitIds)->orderBy('name')->get()
+            : Unit::where('company_id', $user->company_id)->orderBy('name')->get();
+
+        return view('checklist.index', compact('occurrences', 'visibleUnits'));
     }
 
     public function complete(Request $request, TaskOccurrence $occurrence)

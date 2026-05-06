@@ -1,10 +1,39 @@
 @extends('layouts.app')
 @section('content')
-<h4 class="mb-1">Checklist — {{ now()->format('d/m/Y') }}</h4>
-<p class="text-muted mb-4">Olá, {{ auth()->user()->name }}</p>
+<div class="d-flex align-items-baseline justify-content-between mb-1">
+    <h4 class="mb-0">Checklist — {{ now()->format('d/m/Y') }}</h4>
+    <span class="text-muted small">Olá, {{ auth()->user()->name }}</span>
+</div>
+@if($visibleUnits->count() === 1)
+    <p class="text-muted mb-4">
+        <i class="bi bi-building me-1"></i>
+        <strong>{{ $visibleUnits->first()->name }}</strong>
+        <span class="badge bg-secondary ms-1" style="font-size:.65rem">{{ $visibleUnits->first()->typeLabel() }}</span>
+    </p>
+@else
+    <p class="text-muted mb-4">{{ $visibleUnits->pluck('name')->join(' · ') }}</p>
+@endif
 
-@forelse($occurrences->groupBy(fn($o) => $o->activity->category->name ?? 'Sem categoria') as $category => $items)
-<h6 class="text-uppercase text-muted small mb-2">{{ $category }}</h6>
+@php
+    $byUnit = $occurrences->groupBy(fn($o) => $o->activity->unit->name ?? 'Sem unidade');
+    $multiUnit = $byUnit->count() > 1;
+@endphp
+
+@forelse($byUnit as $unitName => $unitOccurrences)
+
+@if($multiUnit)
+    @php $unit = $visibleUnits->firstWhere('name', $unitName); @endphp
+    <div class="d-flex align-items-center gap-2 mb-2 mt-3">
+        <i class="bi bi-building text-primary"></i>
+        <span class="fw-semibold text-primary">{{ $unitName }}</span>
+        @if($unit)
+            <span class="badge bg-secondary" style="font-size:.65rem">{{ $unit->typeLabel() }}</span>
+        @endif
+    </div>
+@endif
+
+@foreach($unitOccurrences->groupBy(fn($o) => $o->activity->category->name ?? 'Sem categoria') as $category => $items)
+<h6 class="text-uppercase text-muted small mb-2 {{ $multiUnit ? 'ms-3' : '' }}">{{ $category }}</h6>
 <div class="card border-0 shadow-sm mb-4">
     @foreach($items as $occ)
     @php
@@ -90,6 +119,8 @@
     </div>
     @endforeach
 </div>
+@endforeach
+
 @empty
 <p class="text-muted">Nenhuma tarefa para hoje.</p>
 @endforelse

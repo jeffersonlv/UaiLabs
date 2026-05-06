@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SupportRequest;
 use App\Models\TaskOccurrence;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -124,10 +125,14 @@ class DashboardController extends Controller
             ];
         }
 
+        $visibleUnits = $unitIds !== null
+            ? Unit::whereIn('id', $unitIds)->orderBy('name')->get()
+            : ($company ? Unit::where('company_id', $company->id)->orderBy('name')->get() : collect());
+
         return view('dashboard', compact(
             'total', 'done', 'pending', 'overdue', 'rate',
             'byUser', 'date', 'dateFrom', 'dateTo', 'isRange',
-            'days', 'avgDone', 'avgNot', 'daily', 'supportStats'
+            'days', 'avgDone', 'avgNot', 'daily', 'supportStats', 'visibleUnits'
         ));
     }
 }
