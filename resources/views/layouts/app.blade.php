@@ -31,33 +31,39 @@
             text-decoration: none;
         }
         .navbar-brand-logo .brand-icon {
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
-            border-radius: 6px;
+            border-radius: 7px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: .85rem;
+            font-size: .9rem;
             color: #fff;
             flex-shrink: 0;
         }
         .navbar-brand-logo .brand-company {
-            font-size: .7rem;
+            font-size: .68rem;
             font-weight: 400;
-            color: rgba(255,255,255,.55);
+            color: rgba(255,255,255,.5);
             display: block;
             line-height: 1;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .navbar-brand-logo .brand-name {
-            line-height: 1.1;
+            line-height: 1.15;
             display: block;
         }
-        .nav-link .bi { font-size: .9rem; }
-        .nav-link.active { color: #fff !important; }
-        .navbar-nav .nav-link { color: rgba(255,255,255,.75); padding: .5rem .65rem; }
-        .navbar-nav .nav-link:hover { color: #fff; }
-        .dropdown-item .bi { width: 1.1rem; text-align: center; }
+        .navbar-nav .nav-link { color: rgba(255,255,255,.78); padding: .5rem .7rem; }
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active  { color: #fff; }
+        .navbar-nav .nav-link .bi { font-size: .9rem; vertical-align: -.08em; }
+        .dropdown-item .bi { width: 1.2rem; text-align: center; vertical-align: -.08em; }
+        .dropdown-item.disabled { opacity: .45; cursor: default; }
+        .dropdown-header { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #6c757d; padding: .45rem 1rem .2rem; }
         .nav-avatar {
             width: 30px;
             height: 30px;
@@ -71,8 +77,7 @@
             color: #fff;
             flex-shrink: 0;
         }
-        .module-locked { cursor: default; opacity: .45; }
-        .nav-divider { width: 1px; background: rgba(255,255,255,.15); margin: .3rem .25rem; align-self: stretch; }
+        .nav-divider-v { width: 1px; background: rgba(255,255,255,.15); margin: .35rem .2rem; align-self: stretch; }
     </style>
 </head>
 <body class="bg-light">
@@ -80,8 +85,20 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 py-2">
     @inject('moduleAccess', 'App\Services\ModuleAccessService')
     @php
-        $authUser    = auth()->user();
-        $initials    = collect(explode(' ', $authUser->name))->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->take(2)->implode('');
+        $authUser = auth()->user();
+        $initials = collect(explode(' ', $authUser->name))
+            ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))
+            ->take(2)->implode('');
+
+        $modules = \App\Modules\ModuleRegistry::active();
+
+        // Is any module route currently active?
+        $moduleRoutePatterns = ['checklist','categories.*','subcategories.*','activities.*',
+            'purchase-requests.*','shifts.*','time-entries.*','work-schedules.*','estoque.*'];
+        $modulesActive = request()->routeIs(...$moduleRoutePatterns);
+
+        // Is any admin route active?
+        $adminActive = request()->routeIs('admin.dashboard','admin.companies.*','admin.users.*','admin.audit-logs.*');
     @endphp
 
     {{-- Brand --}}
@@ -100,138 +117,192 @@
     </button>
 
     <div class="collapse navbar-collapse" id="navMenu">
-        {{-- Main nav --}}
         <ul class="navbar-nav me-auto align-items-lg-center">
+
+            {{-- Dashboard --}}
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                   href="{{ route('dashboard') }}">
                     <i class="bi bi-speedometer2"></i> Dashboard
                 </a>
             </li>
 
-            @foreach(\App\Modules\ModuleRegistry::active() as $mod)
-                @php $hasAccess = $authUser->isSuperAdmin() || $moduleAccess->canAccess($authUser, $mod['key']); @endphp
-                @if($hasAccess)
-                    @if($mod['key'] === 'rotinas' && $authUser->isAdminOrAbove())
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle {{ request()->routeIs('checklist','categories.*','subcategories.*','activities.*') ? 'active' : '' }}"
-                               href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi {{ $mod['icon'] }}"></i>
-                                <span class="d-lg-none d-xl-inline">{{ $mod['name'] }}</span>
-                                <span class="d-none d-lg-inline d-xl-none">Rotinas</span>
-                            </a>
-                            <ul class="dropdown-menu">
+            {{-- ── Dropdown Módulos ─────────────────────────────── --}}
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle {{ $modulesActive ? 'active' : '' }}"
+                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-grid"></i> Módulos
+                </a>
+                <ul class="dropdown-menu shadow" style="min-width:230px">
+                    @foreach($modules as $mod)
+                        @php $hasAccess = $authUser->isSuperAdmin() || $moduleAccess->canAccess($authUser, $mod['key']); @endphp
+
+                        @if($mod['key'] === 'rotinas')
+                            <li><span class="dropdown-header"><i class="bi {{ $mod['icon'] }} me-1"></i>{{ $mod['name'] }}</span></li>
+                            @if($hasAccess)
                                 <li>
                                     <a class="dropdown-item {{ request()->routeIs('checklist') ? 'active' : '' }}"
                                        href="{{ route('checklist') }}">
                                         <i class="bi bi-check2-square"></i> Checklist
                                     </a>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
+                                @if($authUser->isAdminOrAbove())
+                                    <li>
+                                        <a class="dropdown-item {{ request()->routeIs('categories.*') ? 'active' : '' }}"
+                                           href="{{ route('categories.index') }}">
+                                            <i class="bi bi-folder2"></i> Categorias
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {{ request()->routeIs('subcategories.*') ? 'active' : '' }}"
+                                           href="{{ route('subcategories.index') }}">
+                                            <i class="bi bi-folder2-open"></i> Subcategorias
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {{ request()->routeIs('activities.*') ? 'active' : '' }}"
+                                           href="{{ route('activities.index') }}">
+                                            <i class="bi bi-list-task"></i> Atividades
+                                        </a>
+                                    </li>
+                                @endif
+                            @else
                                 <li>
-                                    <a class="dropdown-item {{ request()->routeIs('categories.*') ? 'active' : '' }}"
-                                       href="{{ route('categories.index') }}">
-                                        <i class="bi bi-folder2"></i> Categorias
+                                    <span class="dropdown-item disabled">
+                                        <i class="bi bi-lock me-1"></i> Módulo inativo
+                                    </span>
+                                </li>
+                            @endif
+                            <li><hr class="dropdown-divider my-1"></li>
+
+                        @elseif($mod['key'] === 'time_clock')
+                            <li><span class="dropdown-header"><i class="bi {{ $mod['icon'] }} me-1"></i>{{ $mod['name'] }}</span></li>
+                            @if($hasAccess)
+                                <li>
+                                    <a class="dropdown-item {{ request()->routeIs('time-entries.dashboard') ? 'active' : '' }}"
+                                       href="{{ route('time-entries.dashboard') }}">
+                                        <i class="bi bi-person-clock"></i> Meu Ponto
                                     </a>
                                 </li>
+                                @if($authUser->isAdminOrAbove())
+                                    <li>
+                                        <a class="dropdown-item {{ request()->routeIs('time-entries.index') ? 'active' : '' }}"
+                                           href="{{ route('time-entries.index') }}">
+                                            <i class="bi bi-table"></i> Registros
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {{ request()->routeIs('time-entries.monthly-report') ? 'active' : '' }}"
+                                           href="{{ route('time-entries.monthly-report') }}">
+                                            <i class="bi bi-file-bar-graph"></i> Relatório Mensal
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {{ request()->routeIs('work-schedules.*') ? 'active' : '' }}"
+                                           href="{{ route('work-schedules.index') }}">
+                                            <i class="bi bi-calendar2-check"></i> Jornadas
+                                        </a>
+                                    </li>
+                                @endif
+                            @else
                                 <li>
-                                    <a class="dropdown-item {{ request()->routeIs('subcategories.*') ? 'active' : '' }}"
-                                       href="{{ route('subcategories.index') }}">
-                                        <i class="bi bi-folder2-open"></i> Subcategorias
+                                    <span class="dropdown-item disabled">
+                                        <i class="bi bi-lock me-1"></i> Módulo inativo
+                                    </span>
+                                </li>
+                            @endif
+                            <li><hr class="dropdown-divider my-1"></li>
+
+                        @else
+                            {{-- Generic module (purchase_requests, shifts, estoque) --}}
+                            @if($hasAccess)
+                                <li>
+                                    <a class="dropdown-item {{ request()->routeIs(str_replace('.index','',$mod['route']).'*') ? 'active' : '' }}"
+                                       href="{{ route($mod['route']) }}">
+                                        <i class="bi {{ $mod['icon'] }}"></i> {{ $mod['name'] }}
                                     </a>
                                 </li>
+                            @else
                                 <li>
-                                    <a class="dropdown-item {{ request()->routeIs('activities.*') ? 'active' : '' }}"
-                                       href="{{ route('activities.index') }}">
-                                        <i class="bi bi-list-task"></i> Atividades
-                                    </a>
+                                    <span class="dropdown-item disabled" title="Módulo inativo para sua conta">
+                                        <i class="bi {{ $mod['icon'] }}"></i> {{ $mod['name'] }}
+                                        <i class="bi bi-lock-fill ms-1" style="font-size:.7rem"></i>
+                                    </span>
                                 </li>
-                            </ul>
-                        </li>
-                    @else
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs($mod['route']) ? 'active' : '' }}"
-                               href="{{ route($mod['route']) }}">
-                                <i class="bi {{ $mod['icon'] }}"></i>
-                                <span class="d-lg-none d-xl-inline">{{ $mod['name'] }}</span>
-                                <span class="d-none d-lg-inline d-xl-none">
-                                    {{ Str::words($mod['name'], 1, '') }}
-                                </span>
+                            @endif
+                        @endif
+                    @endforeach
+
+                    {{-- Log de Atividades (manager+) --}}
+                    @if($authUser->isManagerOrAbove() && !$authUser->isSuperAdmin())
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('audit-log.index') ? 'active' : '' }}"
+                               href="{{ route('audit-log.index') }}">
+                                <i class="bi bi-journal-text"></i> Log de Atividades
                             </a>
                         </li>
                     @endif
-                @else
-                    <li class="nav-item">
-                        <span class="nav-link module-locked" title="Módulo inativo para sua conta">
-                            <i class="bi {{ $mod['icon'] }}"></i>
-                            <span class="d-lg-none d-xl-inline">{{ $mod['name'] }}</span>
-                            <span class="d-none d-lg-inline d-xl-none">
-                                {{ Str::words($mod['name'], 1, '') }}
-                            </span>
-                            <i class="bi bi-lock-fill" style="font-size:.65rem;opacity:.6"></i>
-                        </span>
-                    </li>
-                @endif
-            @endforeach
+                </ul>
+            </li>
 
-            @if($authUser->isManagerOrAbove() && !$authUser->isSuperAdmin())
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('audit-log.index') ? 'active' : '' }}"
-                       href="{{ route('audit-log.index') }}">
-                        <i class="bi bi-journal-text"></i>
-                        <span class="d-lg-none d-xl-inline">Log de Atividades</span>
-                        <span class="d-none d-lg-inline d-xl-none">Log</span>
+            {{-- ── Admin (superadmin) ───────────────────────────── --}}
+            @if($authUser->isSuperAdmin())
+                <li class="d-none d-lg-flex nav-divider-v"></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ $adminActive ? 'active' : '' }}"
+                       href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-shield-lock"></i> Admin
                     </a>
+                    <ul class="dropdown-menu shadow">
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
+                               href="{{ route('admin.dashboard') }}">
+                                <i class="bi bi-globe2"></i> Plataforma
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}"
+                               href="{{ route('admin.companies.index') }}">
+                                <i class="bi bi-building"></i> Empresas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
+                               href="{{ route('admin.users.index') }}">
+                                <i class="bi bi-people"></i> Usuários
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"
+                               href="{{ route('admin.audit-logs.index') }}">
+                                <i class="bi bi-shield-check"></i> Audit Log
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             @endif
 
-            @if($authUser->isSuperAdmin())
-                <li class="d-none d-lg-flex nav-divider"></li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
-                       href="{{ route('admin.dashboard') }}" title="Painel da Plataforma">
-                        <i class="bi bi-globe2"></i> Plataforma
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}"
-                       href="{{ route('admin.companies.index') }}" title="Empresas">
-                        <i class="bi bi-building"></i> Empresas
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
-                       href="{{ route('admin.users.index') }}" title="Usuários">
-                        <i class="bi bi-people"></i> Usuários
-                    </a>
-                </li>
+            {{-- Audit Log para admin (não superadmin) --}}
+            @if($authUser->isAdmin())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"
-                       href="{{ route('admin.audit-logs.index') }}" title="Audit Log">
+                       href="{{ route('admin.audit-logs.index') }}">
                         <i class="bi bi-shield-check"></i> Audit Log
                     </a>
                 </li>
             @endif
 
-            @if($authUser->isAdmin())
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"
-                       href="{{ route('admin.audit-logs.index') }}">
-                        <i class="bi bi-shield-check"></i>
-                        <span class="d-lg-none d-xl-inline">Audit Log</span>
-                        <span class="d-none d-lg-inline d-xl-none">Audit</span>
-                    </a>
-                </li>
-            @endif
         </ul>
 
         {{-- Right side --}}
         <ul class="navbar-nav align-items-lg-center gap-1">
 
-            {{-- Bater ponto rápido (staff/manager with time_clock) --}}
+            {{-- Bater ponto rápido --}}
             @if(!$authUser->isSuperAdmin() && $authUser->company_id && $moduleAccess->canAccess($authUser, 'time_clock'))
                 <li class="nav-item">
                     <a class="nav-link px-2" href="{{ url('/clock') }}" title="Bater Ponto">
-                        <i class="bi bi-fingerprint" style="font-size:1.15rem"></i>
+                        <i class="bi bi-fingerprint" style="font-size:1.2rem"></i>
                     </a>
                 </li>
             @endif
@@ -245,7 +316,7 @@
                 </li>
             @elseif($authUser->isManagerOrAbove() && $authUser->company_id)
                 <li class="nav-item">
-                    <a class="nav-link px-2" href="{{ route('support-requests.index') }}" title="Solicitações / Ajuda">
+                    <a class="nav-link px-2" href="{{ route('support-requests.index') }}" title="Ajuda / Suporte">
                         <i class="bi bi-headset" style="font-size:1.1rem"></i>
                     </a>
                 </li>
@@ -256,11 +327,12 @@
                 <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 pe-0"
                    href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="nav-avatar">{{ $initials }}</span>
-                    <span class="d-none d-lg-inline text-white-50" style="font-size:.85rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                    <span class="d-none d-xl-inline text-white-50"
+                          style="font-size:.85rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                         {{ $authUser->name }}
                     </span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:200px">
+                <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:210px">
                     <li class="px-3 py-2 border-bottom">
                         <div class="fw-semibold" style="font-size:.85rem">{{ $authUser->name }}</div>
                         <div class="text-muted" style="font-size:.75rem">{{ ucfirst($authUser->role) }}</div>
@@ -271,11 +343,11 @@
                         </a>
                     </li>
                     @if($authUser->company_id)
-                    <li>
-                        <a class="dropdown-item py-2" href="{{ route('profile.pin.edit') }}">
-                            <i class="bi bi-123 me-2 text-secondary"></i> Alterar PIN de Ponto
-                        </a>
-                    </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{{ route('profile.pin.edit') }}">
+                                <i class="bi bi-123 me-2 text-secondary"></i> Alterar PIN de Ponto
+                            </a>
+                        </li>
                     @endif
                     <li><hr class="dropdown-divider my-1"></li>
                     <li>

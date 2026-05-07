@@ -146,5 +146,6 @@ Route::middleware(['auth', 'active'])->group(function () {
 // Clock page accessible without login (shows username+pin form)
 Route::get('/clock', [ClockController::class, 'show'])->name('clock.guest')->withoutMiddleware(['auth']);
 Route::post('/clock/guest', [ClockController::class, 'punch'])->name('clock.punch.guest')->withoutMiddleware(['auth']);
+Route::get('/clock/units', [ClockController::class, 'userUnits'])->name('clock.units')->withoutMiddleware(['auth']);
 
 require __DIR__.'/auth.php';

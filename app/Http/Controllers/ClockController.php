@@ -105,6 +105,17 @@ class ClockController extends Controller
         return back()->with('clock_message', $message)->with('clock_type', $type);
     }
 
+    /** Returns units for a username (public endpoint for login page clock form). */
+    public function userUnits(Request $request)
+    {
+        $user = User::where('username', $request->username)->where('active', true)->first();
+        if (! $user) {
+            return response()->json([]);
+        }
+        $units = $user->units()->where('active', true)->orderBy('name')->get(['id', 'name']);
+        return response()->json($units);
+    }
+
     public function pinEdit()
     {
         return view('profile.pin-edit');
