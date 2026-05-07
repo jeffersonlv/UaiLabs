@@ -45,20 +45,20 @@ Route::middleware(['auth', 'active'])->group(function () {
         // ── Módulo: Rotinas Operacionais ─────────────────────────
         Route::middleware('module:rotinas')->group(function () {
             Route::get('/checklist', [TaskOccurrenceController::class, 'index'])->name('checklist');
-            Route::patch('/checklist/{occurrence}/complete', [TaskOccurrenceController::class, 'complete'])->name('checklist.complete');
             Route::patch('/checklist/bulk-complete', [TaskOccurrenceController::class, 'bulkComplete'])->name('checklist.bulk-complete');
+            Route::patch('/checklist/{occurrence}/complete', [TaskOccurrenceController::class, 'complete'])->name('checklist.complete');
             Route::get('/checklist/{occurrence}/history', [TaskOccurrenceController::class, 'history'])->name('checklist.history');
 
             Route::middleware('admin')->group(function () {
-                Route::resource('categories', CategoryController::class);
                 Route::get('categories/sort', [CategoryController::class, 'sort'])->name('categories.sort');
                 Route::post('categories/reorder', [CategoryController::class, 'reorder'])->name('categories.reorder');
+                Route::resource('categories', CategoryController::class);
 
                 Route::resource('subcategories', SubcategoryController::class)->except('show');
 
-                Route::resource('activities', ActivityController::class);
                 Route::get('activities/spreadsheet', [ActivityController::class, 'spreadsheet'])->name('activities.spreadsheet');
                 Route::post('activities/bulk-save', [ActivityController::class, 'bulkSave'])->name('activities.bulk-save');
+                Route::resource('activities', ActivityController::class);
             });
         });
 
