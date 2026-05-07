@@ -264,7 +264,7 @@
 
     // ── Bulk complete ──────────────────────────────────────────
     var bulkIds = [];
-    var bulkModal = new bootstrap.Modal(document.getElementById('bulkModal'));
+    var bulkModal = null;
 
     document.querySelectorAll('.bulk-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -276,6 +276,7 @@
             var confirmBtn = document.getElementById('bulkConfirm');
             confirmBtn.disabled = false;
             document.getElementById('bulkSpinner').classList.add('d-none');
+            if (!bulkModal) bulkModal = new bootstrap.Modal(document.getElementById('bulkModal'));
             bulkModal.show();
         });
     });
@@ -299,11 +300,12 @@
     });
 
     // ── Occurrence history modal ───────────────────────────────
-    var historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+    var historyModal = null;
     document.querySelectorAll('.history-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var id = btn.dataset.id;
             document.getElementById('historyBody').innerHTML = '<div class="text-center py-3"><span class="spinner-border text-secondary"></span></div>';
+            if (!historyModal) historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
             historyModal.show();
             fetch('/checklist/' + id + '/history', {
                 headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json'}
