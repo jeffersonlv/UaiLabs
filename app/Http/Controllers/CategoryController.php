@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Category;
@@ -12,9 +13,9 @@ class CategoryController extends Controller
 
     public function index(Request $request)
     {
-        $user      = auth()->user();
-        $search    = $request->input('search');
-        $companies = null;
+        $user              = auth()->user();
+        $search            = $request->input('search');
+        $companies         = null;
         $selectedCompanyId = null;
 
         if ($user->isSuperAdmin()) {
@@ -25,12 +26,14 @@ class CategoryController extends Controller
                 ->withCount('activities')
                 ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
                 ->when($search, fn($q) => $q->where('name', 'like', "%$search%"))
+                ->orderBy('order')
                 ->orderBy('name')
                 ->paginate(15)
                 ->withQueryString();
         } else {
             $categories = Category::withCount('activities')
                 ->when($search, fn($q) => $q->where('name', 'like', "%$search%"))
+                ->orderBy('order')
                 ->orderBy('name')
                 ->paginate(15)
                 ->withQueryString();
@@ -70,5 +73,31 @@ class CategoryController extends Controller
         $category->update(['active' => false]);
         AuditLogger::crud('category.disabled', 'category', $category->id, $category->name);
         return redirect()->route('categories.index')->with('success', 'Categoria desativada.');
+    }
+
+    /** Sort screen. */
+    public function sort()
+    {
+        $categories = Category::with('subcategories')->where('active', true)->orderBy('order')->orderBy('name')->get();
+        return view('categories.sort', compact('categories'));
+    }
+
+    /** Batch reorder (called via AJAX). */
+    public function reorder(Request $request)
+    {
+        $request->validate(['items' => 'required|array']);
+        $companyId = $this->companyId();
+
+        foreach ($request->items as $item) {
+            Category::where('id', $item['id'])->where('company_id', $companyId)->update(['order' => $item['order']]);
+
+            if (! empty($item['subcategories'])) {
+                foreach ($item['subcategories'] as $sub) {
+                    \App\Models\Subcategory::where('id', $sub['id'])->where('company_id', $companyId)->update(['order' => $sub['order']]);
+                }
+            }
+        }
+
+        return response()->json(['ok' => true]);
     }
 }

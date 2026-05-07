@@ -3,7 +3,10 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">Atividades</h4>
     @if(!auth()->user()->isSuperAdmin())
-        <a href="{{ route('activities.create') }}" class="btn btn-primary btn-sm">+ Nova atividade</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('activities.spreadsheet') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-table me-1"></i>Planilha</a>
+            <a href="{{ route('activities.create') }}" class="btn btn-primary btn-sm">+ Nova atividade</a>
+        </div>
     @endif
 </div>
 
@@ -17,15 +20,13 @@
                     <select name="company_id" class="form-select form-select-sm" style="min-width:200px;" onchange="this.form.submit()">
                         <option value="">— Todas as empresas —</option>
                         @foreach($companies as $company)
-                            <option value="{{ $company->id }}" {{ $selectedCompanyId == $company->id ? 'selected' : '' }}>
-                                {{ $company->name }}
-                            </option>
+                            <option value="{{ $company->id }}" {{ $selectedCompanyId == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 @endif
                 <div class="input-group input-group-sm" style="max-width:300px;">
-                    <input type="text" name="search" class="form-control" placeholder="Buscar por título ou categoria..." value="{{ $search }}">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar título ou categoria..." value="{{ $search }}">
                     @if($companies && $selectedCompanyId)
                         <input type="hidden" name="company_id" value="{{ $selectedCompanyId }}">
                     @endif
@@ -43,9 +44,10 @@
                 <th>Título</th>
                 @if($companies)<th>Empresa</th>@endif
                 <th>Categoria</th>
-                <th>Unidade</th>
+                <th>Subcategoria</th>
+                <th>Unidade(s)</th>
                 <th>Periodicidade</th>
-                <th class="text-center">Sequência</th>
+                <th class="text-center">Seq.</th>
                 <th class="text-center">Status</th>
                 <th></th>
             </tr>
@@ -56,16 +58,20 @@
                 <td class="fw-medium">{{ $act->title }}</td>
                 @if($companies)<td class="text-muted small">{{ $act->company?->name ?? '—' }}</td>@endif
                 <td>{{ $act->category->name ?? '—' }}</td>
+                <td class="text-muted small">{{ $act->subcategory?->name ?? '—' }}</td>
                 <td>
-                    @if($act->unit)
-                        <span class="fw-medium">{{ $act->unit->name }}</span>
-                        <span class="badge bg-secondary ms-1" style="font-size:.65rem">{{ $act->unit->typeLabel() }}</span>
-                    @else
+                    @if($act->units->isEmpty())
                         <span class="text-muted small fst-italic">Geral</span>
+                    @else
+                        @foreach($act->units as $unit)
+                            <span class="badge bg-light text-secondary border me-1" style="font-size:.65rem">
+                                {{ $unit->name }}
+                            </span>
+                        @endforeach
                     @endif
                 </td>
                 <td class="text-capitalize">{{ $act->periodicity }}</td>
-                <td class="text-center">{{ $act->sequence_required ? 'Ordem '.$act->sequence_order : '—' }}</td>
+                <td class="text-center small">{{ $act->sequence_required ? $act->sequence_order : '—' }}</td>
                 <td class="text-center">
                     <span class="badge bg-{{ $act->active ? 'success' : 'secondary' }}">{{ $act->active ? 'Ativa' : 'Inativa' }}</span>
                 </td>
@@ -80,13 +86,13 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="{{ $companies ? 8 : 7 }}" class="text-muted text-center py-3">Nenhuma atividade encontrada.</td></tr>
+            <tr><td colspan="{{ $companies ? 9 : 8 }}" class="text-muted text-center py-3">Nenhuma atividade encontrada.</td></tr>
             @endforelse
         </tbody>
     </table>
     @if($activities->hasPages())
     <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
-        <small class="text-muted">{{ $activities->firstItem() }}–{{ $activities->lastItem() }} de {{ $activities->total() }} registros</small>
+        <small class="text-muted">{{ $activities->firstItem() }}–{{ $activities->lastItem() }} de {{ $activities->total() }}</small>
         {{ $activities->links() }}
     </div>
     @endif

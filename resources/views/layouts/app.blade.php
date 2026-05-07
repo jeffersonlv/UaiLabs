@@ -16,6 +16,7 @@
         {{ implode(' — ', $titleParts) }}
         @hasSection('title') | @yield('title') @endif
     </title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
@@ -71,8 +72,13 @@
                 <li class="nav-item"><a class="nav-link" href="{{ route('audit-log.index') }}">Log de Atividades</a></li>
             @endif
             @if($authUser->isSuperAdmin())
+                <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Plataforma</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('admin.companies.index') }}">Empresas</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('admin.users.index') }}">Usuários</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('admin.audit-logs.index') }}">Audit Log</a></li>
+            @endif
+            @if($authUser->isAdmin())
+                <li class="nav-item"><a class="nav-link" href="{{ route('admin.audit-logs.index') }}">Audit Log</a></li>
             @endif
         </ul>
         <ul class="navbar-nav align-items-center gap-1">
@@ -111,6 +117,11 @@
                     <li>
                         <a class="dropdown-item" href="{{ route('password.edit') }}">
                             &#128273; Redefinir senha
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('profile.pin.edit') }}">
+                            &#128290; Alterar PIN de Ponto
                         </a>
                     </li>
                     <li><hr class="dropdown-divider"></li>

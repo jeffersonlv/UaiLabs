@@ -186,6 +186,29 @@
     </div>
 </div>
 
+{{-- ── Gráfico de conclusão (Chart.js) ─────────────────────── --}}
+@if($isRange)
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+        <span class="fw-semibold small">Taxa de conclusão por dia</span>
+        <div class="d-flex gap-1">
+            @if(auth()->user()->isSuperAdmin())
+                @foreach(['geral'=>'Geral','empresa'=>'Por empresa','filial'=>'Por filial'] as $v => $l)
+                    <a href="#" class="btn btn-sm {{ request('chart_group','geral') === $v ? 'btn-secondary' : 'btn-outline-secondary' }} py-0 chart-group-btn" data-group="{{ $v }}" style="font-size:.7rem">{{ $l }}</a>
+                @endforeach
+            @else
+                @foreach(['geral'=>'Geral','filial'=>'Por filial'] as $v => $l)
+                    <a href="#" class="btn btn-sm {{ request('chart_group','geral') === $v ? 'btn-secondary' : 'btn-outline-secondary' }} py-0 chart-group-btn" data-group="{{ $v }}" style="font-size:.7rem">{{ $l }}</a>
+                @endforeach
+            @endif
+        </div>
+    </div>
+    <div class="card-body p-3">
+        <canvas id="completionChart" height="80"></canvas>
+    </div>
+</div>
+@endif
+
 {{-- ── Detalhamento diário (só no range) ─────────────────── --}}
 @if($isRange && $daily->isNotEmpty())
 <h6 class="mb-3">Detalhamento diário</h6>
@@ -353,5 +376,73 @@
         </tbody>
     </table>
 </div>
+
+@push('scripts')
+@if($isRange)
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    var chartInstance = null;
+    var currentGroup  = '{{ request("chart_group", "geral") }}';
+
+    function loadChart(group) {
+        currentGroup = group;
+        var params = new URLSearchParams({
+            date_from:   '{{ $dateFrom?->toDateString() }}',
+            date_to:     '{{ $dateTo?->toDateString() }}',
+            group:       group,
+            @if($selectedCompanyId) company_id: '{{ $selectedCompanyId }}', @endif
+            @if($selectedUnitId)    unit_id:    '{{ $selectedUnitId }}',    @endif
+        });
+
+        fetch('/dashboard/completion-chart?' + params.toString())
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var ctx = document.getElementById('completionChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: data.datasets.map(function (ds) {
+                        return Object.assign(ds, {
+                            tension: 0.3,
+                            spanGaps: true,
+                            pointRadius: 3,
+                        });
+                    })
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: data.datasets.length > 1 ? 'bottom' : 'none' },
+                        tooltip: { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y + '%'; } } }
+                    },
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { callback: function (v) { return v + '%'; } } }
+                    }
+                }
+            });
+        });
+    }
+
+    loadChart(currentGroup);
+
+    document.querySelectorAll('.chart-group-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelectorAll('.chart-group-btn').forEach(function (b) {
+                b.classList.remove('btn-secondary');
+                b.classList.add('btn-outline-secondary');
+            });
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-secondary');
+            loadChart(btn.dataset.group);
+        });
+    });
+})();
+</script>
+@endif
+@endpush
 
 @endsection

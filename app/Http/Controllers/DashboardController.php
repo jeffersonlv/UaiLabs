@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Company;
@@ -25,8 +26,6 @@ class DashboardController extends Controller
         if ($isRange) {
             $dateFrom = Carbon::parse($request->date_from)->startOfDay();
             $dateTo   = Carbon::parse($request->date_to)->endOfDay();
-
-            // Garante que date_from <= date_to
             if ($dateFrom->gt($dateTo)) {
                 [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
             }
@@ -37,12 +36,12 @@ class DashboardController extends Controller
         }
 
         // ── Filtros de empresa/unidade ────────────────────────────
-        $unitIds          = $user->visibleUnitIds();
-        $allCompanies     = collect();
-        $companyUnits     = collect();
+        $unitIds           = $user->visibleUnitIds();
+        $allCompanies      = collect();
+        $companyUnits      = collect();
         $selectedCompanyId = null;
-        $selectedUnitId   = null;
-        $filterCompany    = $company; // empresa efetiva para a query
+        $selectedUnitId    = null;
+        $filterCompany     = $company;
 
         if ($user->isSuperAdmin()) {
             $allCompanies      = Company::orderBy('name')->get();
@@ -162,5 +161,79 @@ class DashboardController extends Controller
             'visibleUnits', 'companyUnits', 'selectedUnitId',
             'allCompanies', 'selectedCompanyId', 'filterCompany'
         ));
+    }
+
+    /** Chart.js data endpoint. */
+    public function completionChart(Request $request)
+    {
+        $user    = auth()->user();
+        $company = $user->company;
+
+        $dateFrom = Carbon::parse($request->input('date_from', Carbon::today()->subDays(6)))->startOfDay();
+        $dateTo   = Carbon::parse($request->input('date_to', Carbon::today()))->endOfDay();
+        $groupBy  = $request->input('group', 'geral'); // geral | empresa | filial
+
+        $unitIds          = $user->visibleUnitIds();
+        $selectedCompanyId = $request->input('company_id');
+        $filterCompany    = $company;
+
+        if ($user->isSuperAdmin() && $selectedCompanyId) {
+            $filterCompany = Company::find($selectedCompanyId);
+        }
+
+        $datasets = [];
+        $palette  = ['#0d6efd','#198754','#dc3545','#ffc107','#6f42c1','#0dcaf0','#fd7e14'];
+
+        if ($groupBy === 'filial') {
+            $units = $unitIds !== null
+                ? Unit::whereIn('id', $unitIds)->get()
+                : ($filterCompany ? Unit::where('company_id', $filterCompany->id)->get() : collect());
+
+            foreach ($units as $idx => $unit) {
+                $data = $this->dailyRates(TaskOccurrence::where('unit_id', $unit->id), $dateFrom, $dateTo);
+                $datasets[] = ['label' => $unit->name, 'data' => array_values($data), 'borderColor' => $palette[$idx % count($palette)], 'fill' => false];
+            }
+        } elseif ($groupBy === 'empresa' && $user->isSuperAdmin()) {
+            $companies = Company::orderBy('name')->get();
+            foreach ($companies as $idx => $c) {
+                $data = $this->dailyRates(TaskOccurrence::withoutGlobalScopes()->where('company_id', $c->id), $dateFrom, $dateTo);
+                $datasets[] = ['label' => $c->name, 'data' => array_values($data), 'borderColor' => $palette[$idx % count($palette)], 'fill' => false];
+            }
+        } else {
+            $q = TaskOccurrence::query();
+            if ($filterCompany) $q->where('company_id', $filterCompany->id);
+            if ($unitIds !== null) $q->whereIn('unit_id', $unitIds);
+            $data = $this->dailyRates($q, $dateFrom, $dateTo);
+            $datasets[] = ['label' => 'Geral', 'data' => array_values($data), 'borderColor' => '#0d6efd', 'fill' => false];
+        }
+
+        $labels = [];
+        $d = $dateFrom->copy();
+        while ($d->lte($dateTo)) {
+            $labels[] = $d->format('d/m');
+            $d->addDay();
+        }
+
+        return response()->json(compact('labels', 'datasets'));
+    }
+
+    private function dailyRates($query, Carbon $from, Carbon $to): array
+    {
+        $rows = (clone $query)
+            ->whereBetween('period_start', [$from->toDateString(), $to->toDateString()])
+            ->selectRaw("period_start, COUNT(*) as total, SUM(status='DONE') as done")
+            ->groupBy('period_start')
+            ->get()
+            ->keyBy(fn($r) => Carbon::parse($r->period_start)->format('Y-m-d'));
+
+        $result = [];
+        $d = $from->copy();
+        while ($d->lte($to)) {
+            $key = $d->format('Y-m-d');
+            $row = $rows->get($key);
+            $result[$key] = $row && $row->total > 0 ? round(($row->done / $row->total) * 100, 1) : null;
+            $d->addDay();
+        }
+        return $result;
     }
 }

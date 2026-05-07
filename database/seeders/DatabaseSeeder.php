@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             ActivitySeeder::class,
             Company2Seeder::class,
             ModulePermissionSeeder::class,
+            WorkScheduleSeeder::class,
         ]);
     }
 }

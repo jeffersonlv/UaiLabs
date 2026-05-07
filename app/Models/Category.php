@@ -9,13 +9,14 @@ class Category extends Model
 {
     use BelongsToCompany;
 
-    protected $fillable = ['company_id', 'name', 'description', 'active'];
+    protected $fillable = ['company_id', 'name', 'description', 'active', 'order'];
 
     protected static function booted(): void
     {
         static::addGlobalScope(new TenantScope);
     }
 
-    public function company() { return $this->belongsTo(Company::class); }
-    public function activities() { return $this->hasMany(Activity::class); }
+    public function company()       { return $this->belongsTo(Company::class); }
+    public function activities()    { return $this->hasMany(Activity::class); }
+    public function subcategories() { return $this->hasMany(Subcategory::class)->orderBy('order'); }
 }
