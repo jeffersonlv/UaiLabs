@@ -3,7 +3,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="bi bi-person-clock me-2"></i>Meu Ponto — {{ $user->name }}</h4>
-    <a href="{{ route('clock') }}" class="btn btn-primary btn-sm"><i class="bi bi-clock me-1"></i>Bater Ponto</a>
+    <a href="{{ url('/clock') }}" class="btn btn-primary btn-sm"><i class="bi bi-clock me-1"></i>Bater Ponto</a>
 </div>
 <form method="GET" action="{{ route('time-entries.dashboard') }}" class="mb-3">
     <div class="d-flex gap-2 align-items-end">

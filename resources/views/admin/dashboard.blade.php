@@ -49,7 +49,7 @@
                 <li class="list-group-item" style="font-size:.8rem">
                     <code>{{ $log->action }}</code>
                     <span class="text-muted ms-1">por {{ $log->user?->name ?? '—' }}</span>
-                    <span class="float-end text-muted">{{ $log->created_at->diffForHumans() }}</span>
+                    <span class="float-end text-muted">{{ $log->timestamp->diffForHumans() }}</span>
                 </li>
                 @empty
                 <li class="list-group-item text-muted text-center py-3">Nenhuma atividade recente.</li>

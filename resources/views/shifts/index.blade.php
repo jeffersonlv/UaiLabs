@@ -101,22 +101,26 @@
     </div>
 </div>
 
+@php
+    $shiftsJson = json_encode($shifts->map(fn($s) => [
+        'id'        => $s->id,
+        'group'     => $s->user_id,
+        'content'   => $s->typeLabel() . ($s->notes ? ': ' . $s->notes : ''),
+        'start'     => $s->start_at->toIso8601String(),
+        'end'       => $s->end_at->toIso8601String(),
+        'className' => 'shift-' . $s->type,
+        'title'     => $s->user->name . '<br>' . $s->start_at->format('H:i') . '–' . $s->end_at->format('H:i'),
+    ]), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $groupsJson = json_encode($unitUsers->map(fn($u) => ['id' => $u->id, 'content' => $u->name]));
+@endphp
 @push('scripts')
 <link href="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/styles/vis-timeline-graph2d.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/standalone/umd/vis-timeline-graph2d.min.js"></script>
 <script>
 (function () {
-    var shiftsData = @json($shifts->map(fn($s) => [
-        'id'      => $s->id,
-        'group'   => $s->user_id,
-        'content' => $s->typeLabel() . ($s->notes ? ': ' . $s->notes : ''),
-        'start'   => $s->start_at->toIso8601String(),
-        'end'     => $s->end_at->toIso8601String(),
-        'className'=> 'shift-' . $s->type,
-        'title'   => $s->user->name . '<br>' . $s->start_at->format('H:i') . '–' . $s->end_at->format('H:i'),
-    ]));
+    var shiftsData = {!! $shiftsJson !!};
 
-    var groups = @json($unitUsers->map(fn($u) => ['id' => $u->id, 'content' => $u->name]));
+    var groups = {!! $groupsJson !!};
 
     var container = document.getElementById('timeline');
     var items  = new vis.DataSet(shiftsData);
