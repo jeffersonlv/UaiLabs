@@ -41,8 +41,8 @@
         <span class="text-uppercase text-muted fw-semibold" style="font-size:.75rem;letter-spacing:.05em">{{ $category }}</span>
         @if(count($pendingIds))
             <button type="button"
-                    class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto bulk-btn"
-                    style="font-size:.7rem"
+                    class="btn btn-sm btn-primary py-0 px-2 ms-auto bulk-btn"
+                    style="font-size:.7rem;pointer-events:auto"
                     data-ids="{{ json_encode($pendingIds) }}"
                     data-count="{{ count($pendingIds) }}"
                     data-category="{{ $category }}">
@@ -267,7 +267,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var bulkModal = null;
 
     document.querySelectorAll('.bulk-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
             bulkIds = JSON.parse(btn.dataset.ids);
             document.getElementById('bulkCount').textContent = btn.dataset.count;
             document.getElementById('bulkCategory').textContent = btn.dataset.category || '';
