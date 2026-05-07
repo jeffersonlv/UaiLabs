@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navbar Mockup — UaiLabs</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; }
+
+/* ══════════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════════ */
+.topbar {
+    background: #1a1a2e;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    height: 54px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+
+/* Brand */
+.brand {
+    display: flex; align-items: center; gap: .5rem;
+    text-decoration: none; flex-shrink: 0;
+}
+.brand-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; color: #fff;
+}
+.brand-name  { font-weight: 700; color: #fff; font-size: .95rem; display: block; line-height: 1.1; }
+.brand-sub   { font-size: .63rem; color: rgba(255,255,255,.4); display: block; }
+
+/* Hamburger (mobile only) */
+.hamburger {
+    display: none;
+    margin-left: auto;
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,.8);
+    font-size: 1.35rem;
+    padding: .3rem .4rem;
+    border-radius: 6px;
+    transition: background .15s;
+}
+.hamburger:hover { background: rgba(255,255,255,.08); }
+
+/* ── DESKTOP NAV ── */
+.nav-desktop {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: .1rem;
+    margin: 0 .5rem;
+}
+.nav-right-desktop {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    margin-left: auto;
+}
+
+/* ── MOBILE DRAWER ── */
+.nav-mobile {
+    display: none;
+    position: fixed;
+    top: 54px; left: 0; right: 0; bottom: 0;
+    background: #1a1a2e;
+    overflow-y: auto;
+    padding: .75rem 0 2rem;
+    z-index: 999;
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+}
+.nav-mobile.open { transform: translateX(0); }
+
+/* ══════════════════════════════════════════
+   NAV LINKS (shared)
+══════════════════════════════════════════ */
+.nav-link {
+    display: flex; align-items: center; gap: .4rem;
+    padding: .42rem .75rem;
+    color: rgba(255,255,255,.75);
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: .875rem;
+    border: none; background: none; cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, color .15s;
+    font-family: inherit;
+}
+.nav-link:hover, .nav-link.open { background: rgba(255,255,255,.09); color: #fff; }
+.nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
+.nav-link i { font-size: .88rem; }
+.caret { font-size: .65rem !important; margin-left: .1rem; transition: transform .2s; }
+.nav-link.open .caret { transform: rotate(180deg); }
+
+.nav-sep { width: 1px; height: 22px; background: rgba(255,255,255,.12); margin: 0 .3rem; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════
+   DESKTOP DROPDOWNS
+══════════════════════════════════════════ */
+.dd-wrap { position: relative; }
+
+.dd-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.18);
+    min-width: 220px;
+    padding: .4rem 0;
+    opacity: 0; transform: translateY(-6px); pointer-events: none;
+    transition: opacity .15s, transform .15s;
+    z-index: 2000;
+}
+.dd-menu.dd-right { left: auto; right: 0; }
+.dd-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+/* ══════════════════════════════════════════
+   DROPDOWN ITEMS (shared desktop+mobile)
+══════════════════════════════════════════ */
+.dd-header {
+    font-size: .67rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #94a3b8;
+    padding: .5rem 1rem .2rem;
+}
+.dd-item {
+    display: flex; align-items: center; gap: .55rem;
+    padding: .46rem 1rem;
+    font-size: .875rem; color: #1e293b;
+    text-decoration: none; cursor: pointer;
+    transition: background .1s;
+    border: none; background: none; width: 100%;
+    font-family: inherit; text-align: left;
+}
+.dd-item:hover { background: #f1f5f9; }
+.dd-item.active { background: #eff6ff; color: #2563eb; font-weight: 500; }
+.dd-item i { width: 1rem; text-align: center; color: #64748b; font-size: .88rem; }
+.dd-item.active i { color: #2563eb; }
+.dd-item.disabled { color: #94a3b8; cursor: default; }
+.dd-item.disabled:hover { background: none; }
+.dd-item.danger { color: #dc2626; }
+.dd-item.danger i { color: #dc2626; }
+.dd-item.danger:hover { background: #fef2f2; }
+.dd-sep { height: 1px; background: #e2e8f0; margin: .3rem 0; }
+
+/* User dropdown header */
+.dd-user-hd { padding: .6rem 1rem .5rem; border-bottom: 1px solid #e2e8f0; margin-bottom: .25rem; }
+.dd-user-name { font-weight: 600; font-size: .875rem; color: #1e293b; }
+.dd-user-role { font-size: .73rem; color: #64748b; }
+
+/* ══════════════════════════════════════════
+   ICON / AVATAR BUTTONS
+══════════════════════════════════════════ */
+.icon-btn {
+    width: 36px; height: 36px; border: none; background: none;
+    cursor: pointer; color: rgba(255,255,255,.7); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; transition: background .15s, color .15s;
+}
+.icon-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+.avatar-btn {
+    display: flex; align-items: center; gap: .45rem;
+    border: none; background: none; cursor: pointer;
+    padding: .3rem .45rem; border-radius: 6px;
+    color: rgba(255,255,255,.75); transition: background .15s;
+}
+.avatar-btn:hover, .avatar-btn.open { background: rgba(255,255,255,.08); }
+.avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .68rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.avatar-name { font-size: .82rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ══════════════════════════════════════════
+   MOBILE DRAWER ITEMS
+══════════════════════════════════════════ */
+.mob-section { padding: .25rem .75rem; }
+.mob-label {
+    font-size: .65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: rgba(255,255,255,.3);
+    padding: .6rem .75rem .2rem;
+}
+.mob-link {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .6rem .75rem;
+    color: rgba(255,255,255,.8);
+    text-decoration: none; border-radius: 8px;
+    font-size: .9rem; transition: background .12s;
+    margin: 1px 0;
+}
+.mob-link:hover, .mob-link.active { background: rgba(255,255,255,.08); color: #fff; }
+.mob-link i { font-size: .95rem; width: 1.2rem; text-align: center; }
+.mob-link.active i { color: #60a5fa; }
+.mob-link.danger { color: #f87171; }
+.mob-sep { height: 1px; background: rgba(255,255,255,.08); margin: .4rem .75rem; }
+
+/* Mobile accordion (for módulos section) */
+.mob-accordion > .mob-acc-toggle {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .6rem .75rem;
+    color: rgba(255,255,255,.8);
+    background: none; border: none; cursor: pointer;
+    font-size: .9rem; font-family: inherit;
+    width: 100%; text-align: left; border-radius: 8px;
+    transition: background .12s;
+}
+.mob-accordion > .mob-acc-toggle:hover { background: rgba(255,255,255,.08); color: #fff; }
+.mob-accordion > .mob-acc-toggle .acc-caret { margin-left: auto; font-size: .7rem; transition: transform .2s; }
+.mob-accordion.open > .mob-acc-toggle .acc-caret { transform: rotate(180deg); }
+.mob-acc-body { display: none; padding-left: 1.75rem; }
+.mob-accordion.open .mob-acc-body { display: block; }
+.mob-acc-sub {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .5rem .5rem;
+    color: rgba(255,255,255,.65);
+    text-decoration: none; border-radius: 6px;
+    font-size: .85rem; transition: background .1s;
+}
+.mob-acc-sub:hover { background: rgba(255,255,255,.07); color: #fff; }
+.mob-acc-sub i { font-size: .88rem; width: 1rem; text-align: center; }
+.mob-acc-sub.disabled { color: rgba(255,255,255,.3); cursor: default; }
+
+/* Mobile user header */
+.mob-user-hd {
+    display: flex; align-items: center; gap: .75rem;
+    padding: 1rem .75rem .75rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: .4rem;
+}
+.mob-user-hd .avatar { width: 38px; height: 38px; font-size: .78rem; }
+.mob-user-name { font-weight: 600; color: #fff; font-size: .9rem; }
+.mob-user-role { font-size: .75rem; color: rgba(255,255,255,.45); }
+
+/* ══════════════════════════════════════════
+   OVERLAY (mobile)
+══════════════════════════════════════════ */
+.overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity .22s;
+}
+.overlay.open { opacity: 1; }
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .nav-desktop { display: none; }
+    .nav-right-desktop { display: none; }
+    .hamburger { display: flex; align-items: center; }
+    .nav-mobile { display: block; }
+    .overlay { display: block; }
+}
+
+/* ══════════════════════════════════════════
+   DEMO PAGE
+══════════════════════════════════════════ */
+.page { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+.demo-note {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 1.5rem; color: #475569; font-size: .9rem; line-height: 1.6;
+}
+.demo-note h2 { color: #1e293b; margin-bottom: .5rem; font-size: 1rem; }
+.tag { display: inline-block; background: #eff6ff; color: #2563eb; border-radius: 4px; padding: .1rem .4rem; font-size: .75rem; font-weight: 600; margin: .1rem; }
+</style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ════════════════════════════════════════════ -->
+<nav class="topbar">
+
+    <!-- Brand -->
+    <a class="brand" href="#">
+        <span class="brand-icon"><i class="bi bi-grid-3x3-gap-fill"></i></span>
+        <span>
+            <span class="brand-name">UaiLabs</span>
+            <span class="brand-sub">Empresa Demonstração</span>
+        </span>
+    </a>
+
+    <!-- ── Desktop nav ── -->
+    <div class="nav-desktop">
+        <a class="nav-link active" href="#">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+
+        <!-- Módulos -->
+        <div class="dd-wrap">
+            <button class="nav-link" id="btn-mod" onclick="ddToggle('dd-mod','btn-mod')">
+                <i class="bi bi-grid"></i> Módulos
+                <i class="bi bi-chevron-down caret"></i>
+            </button>
+            <div class="dd-menu" id="dd-mod">
+                <div class="dd-header"><i class="bi bi-check2-square"></i> Rotinas</div>
+                <a class="dd-item active" href="#"><i class="bi bi-check2-square"></i> Checklist</a>
+                <a class="dd-item" href="#"><i class="bi bi-folder2"></i> Categorias</a>
+                <a class="dd-item" href="#"><i class="bi bi-folder2-open"></i> Subcategorias</a>
+                <a class="dd-item" href="#"><i class="bi bi-list-task"></i> Atividades</a>
+                <div class="dd-sep"></div>
+                <a class="dd-item" href="#"><i class="bi bi-cart-plus"></i> Solicitação de Compras</a>
+                <a class="dd-item" href="#"><i class="bi bi-calendar-week"></i> Escala de Funcionários</a>
+                <div class="dd-sep"></div>
+                <div class="dd-header"><i class="bi bi-clock-history"></i> Ponto</div>
+                <a class="dd-item" href="#"><i class="bi bi-person-clock"></i> Meu Ponto</a>
+                <a class="dd-item" href="#"><i class="bi bi-table"></i> Registros</a>
+                <a class="dd-item" href="#"><i class="bi bi-file-bar-graph"></i> Relatório Mensal</a>
+                <a class="dd-item" href="#"><i class="bi bi-calendar2-check"></i> Jornadas</a>
+                <div class="dd-sep"></div>
+                <a class="dd-item disabled"><i class="bi bi-box-seam"></i> Estoque <i class="bi bi-lock-fill ms-auto" style="font-size:.65rem;color:#cbd5e1;margin-left:auto"></i></a>
+                <div class="dd-sep"></div>
+                <a class="dd-item" href="#"><i class="bi bi-shield-check"></i> Audit Log</a>
+            </div>
+        </div>
+
+        <div class="nav-sep"></div>
+
+        <!-- Admin -->
+        <div class="dd-wrap">
+            <button class="nav-link" id="btn-adm" onclick="ddToggle('dd-adm','btn-adm')">
+                <i class="bi bi-shield-lock"></i> Admin
+                <i class="bi bi-chevron-down caret"></i>
+            </button>
+            <div class="dd-menu" id="dd-adm">
+                <a class="dd-item" href="#"><i class="bi bi-globe2"></i> Plataforma</a>
+                <a class="dd-item" href="#"><i class="bi bi-building"></i> Empresas</a>
+                <a class="dd-item" href="#"><i class="bi bi-people"></i> Usuários</a>
+                <div class="dd-sep"></div>
+                <a class="dd-item" href="#"><i class="bi bi-shield-check"></i> Audit Log</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Desktop right ── -->
+    <div class="nav-right-desktop">
+        <button class="icon-btn" title="Bater Ponto"><i class="bi bi-fingerprint"></i></button>
+        <button class="icon-btn" title="Suporte"><i class="bi bi-headset"></i></button>
+        <div class="dd-wrap">
+            <button class="avatar-btn" id="btn-usr" onclick="ddToggle('dd-usr','btn-usr')">
+                <span class="avatar">JL</span>
+                <span class="avatar-name">Jefferson Lima</span>
+                <i class="bi bi-chevron-down" style="font-size:.6rem;color:rgba(255,255,255,.4);margin-left:.1rem"></i>
+            </button>
+            <div class="dd-menu dd-right" id="dd-usr">
+                <div class="dd-user-hd">
+                    <div class="dd-user-name">Jefferson Lima</div>
+                    <div class="dd-user-role">Admin</div>
+                </div>
+                <a class="dd-item" href="#"><i class="bi bi-key"></i> Redefinir senha</a>
+                <a class="dd-item" href="#"><i class="bi bi-123"></i> Alterar PIN</a>
+                <div class="dd-sep"></div>
+                <a class="dd-item danger" href="#"><i class="bi bi-box-arrow-right"></i> Sair</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Hamburger (mobile) ── -->
+    <button class="hamburger" id="hamburger" onclick="mobileToggle()" aria-label="Menu">
+        <i class="bi bi-list" id="ham-icon"></i>
+    </button>
+</nav>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="mobileClose()"></div>
+
+<!-- ══ MOBILE DRAWER ════════════════════════════════════ -->
+<div class="nav-mobile" id="nav-mobile">
+
+    <!-- User header -->
+    <div class="mob-user-hd">
+        <span class="avatar" style="width:38px;height:38px;font-size:.78rem">JL</span>
+        <div>
+            <div class="mob-user-name">Jefferson Lima</div>
+            <div class="mob-user-role">Admin · Empresa Demonstração</div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <a class="mob-link active" href="#"><i class="bi bi-speedometer2"></i> Dashboard</a>
+
+    <div class="mob-sep"></div>
+    <div class="mob-label">Módulos</div>
+
+    <!-- Rotinas accordion -->
+    <div class="mob-accordion" id="mob-rotinas">
+        <button class="mob-acc-toggle" onclick="mobAccordion('mob-rotinas')">
+            <i class="bi bi-check2-square"></i> Rotinas Operacionais
+            <i class="bi bi-chevron-down acc-caret"></i>
+        </button>
+        <div class="mob-acc-body">
+            <a class="mob-acc-sub active" href="#"><i class="bi bi-check2-square"></i> Checklist</a>
+            <a class="mob-acc-sub" href="#"><i class="bi bi-folder2"></i> Categorias</a>
+            <a class="mob-acc-sub" href="#"><i class="bi bi-folder2-open"></i> Subcategorias</a>
+            <a class="mob-acc-sub" href="#"><i class="bi bi-list-task"></i> Atividades</a>
+        </div>
+    </div>
+
+    <a class="mob-link" href="#"><i class="bi bi-cart-plus"></i> Solicitação de Compras</a>
+    <a class="mob-link" href="#"><i class="bi bi-calendar-week"></i> Escala de Funcionários</a>
+
+    <!-- Ponto accordion -->
+    <div class="mob-accordion" id="mob-ponto">
+        <button class="mob-acc-toggle" onclick="mobAccordion('mob-ponto')">
+            <i class="bi bi-clock-history"></i> Ponto
+            <i class="bi bi-chevron-down acc-caret"></i>
+        </button>
+        <div class="mob-acc-body">
+            <a class="mob-acc-sub" href="#"><i class="bi bi-person-clock"></i> Meu Ponto</a>
+            <a class="mob-acc-sub" href="#"><i class="bi bi-table"></i> Registros</a>
+            <a class="mob-acc-sub" href="#"><i class="bi bi-file-bar-graph"></i> Relatório Mensal</a>
+            <a class="mob-acc-sub" href="#"><i class="bi bi-calendar2-check"></i> Jornadas</a>
+        </div>
+    </div>
+
+    <a class="mob-link disabled" style="color:rgba(255,255,255,.3);cursor:default"><i class="bi bi-box-seam"></i> Estoque <i class="bi bi-lock-fill" style="margin-left:auto;font-size:.7rem"></i></a>
+    <a class="mob-link" href="#"><i class="bi bi-shield-check"></i> Audit Log</a>
+
+    <div class="mob-sep"></div>
+    <div class="mob-label">Admin</div>
+    <a class="mob-link" href="#"><i class="bi bi-globe2"></i> Plataforma</a>
+    <a class="mob-link" href="#"><i class="bi bi-building"></i> Empresas</a>
+    <a class="mob-link" href="#"><i class="bi bi-people"></i> Usuários</a>
+
+    <div class="mob-sep"></div>
+    <a class="mob-link" href="#"><i class="bi bi-fingerprint"></i> Bater Ponto</a>
+    <a class="mob-link" href="#"><i class="bi bi-headset"></i> Suporte</a>
+
+    <div class="mob-sep"></div>
+    <a class="mob-link" href="#"><i class="bi bi-key"></i> Redefinir senha</a>
+    <a class="mob-link" href="#"><i class="bi bi-123"></i> Alterar PIN</a>
+    <a class="mob-link danger" href="#"><i class="bi bi-box-arrow-right"></i> Sair</a>
+</div>
+
+<!-- ══ PAGE CONTENT ══════════════════════════════════════ -->
+<div class="page">
+    <div class="demo-note">
+        <h2>Mockup responsivo — Navbar UaiLabs</h2>
+        <p><strong>Desktop (≥769px):</strong> Clique em <strong>Módulos</strong>, <strong>Admin</strong> e no avatar. Feche clicando fora ou com <kbd>Esc</kbd>.</p>
+        <p style="margin-top:.5rem"><strong>Mobile (&lt;769px):</strong> Redimensione a janela ou abra as DevTools do Chrome em modo mobile. O ícone <i class="bi bi-list"></i> abre o drawer lateral. Rotinas e Ponto têm accordion.</p>
+        <p style="margin-top:.75rem">
+            <span class="tag">Zero Bootstrap JS</span>
+            <span class="tag">Vanilla JS puro</span>
+            <span class="tag">Mobile-first</span>
+            <span class="tag">Drawer lateral</span>
+            <span class="tag">Accordion</span>
+        </p>
+    </div>
+</div>
+
+<script>
+/* ── DESKTOP DROPDOWNS ───────────────────────────────── */
+function ddToggle(menuId, btnId) {
+    var menu = document.getElementById(menuId);
+    var btn  = document.getElementById(btnId);
+    var open = menu.classList.contains('open');
+    ddCloseAll();
+    if (!open) {
+        menu.classList.add('open');
+        btn.classList.add('open');
+    }
+}
+function ddCloseAll() {
+    document.querySelectorAll('.dd-menu.open').forEach(function(m) { m.classList.remove('open'); });
+    document.querySelectorAll('.nav-link.open,.avatar-btn.open').forEach(function(b) { b.classList.remove('open'); });
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dd-wrap')) ddCloseAll();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { ddCloseAll(); mobileClose(); }
+});
+
+/* ── MOBILE DRAWER ───────────────────────────────────── */
+var mobileOpen = false;
+function mobileToggle() {
+    mobileOpen ? mobileClose() : mobileShow();
+}
+function mobileShow() {
+    mobileOpen = true;
+    document.getElementById('nav-mobile').classList.add('open');
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('ham-icon').className = 'bi bi-x-lg';
+    document.body.style.overflow = 'hidden';
+}
+function mobileClose() {
+    mobileOpen = false;
+    document.getElementById('nav-mobile').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('ham-icon').className = 'bi bi-list';
+    document.body.style.overflow = '';
+}
+
+/* ── MOBILE ACCORDION ────────────────────────────────── */
+function mobAccordion(id) {
+    var el = document.getElementById(id);
+    el.classList.toggle('open');
+}
+</script>
+</body>
+</html>
