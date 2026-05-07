@@ -131,7 +131,7 @@
             {{-- ── Dropdown Módulos ─────────────────────────────── --}}
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle {{ $modulesActive ? 'active' : '' }}"
-                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                   href="javascript:void(0)" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-grid"></i> Módulos
                 </a>
                 <ul class="dropdown-menu shadow" style="min-width:230px">
@@ -234,14 +234,23 @@
                         @endif
                     @endforeach
 
-                    {{-- Log de Atividades (manager+) --}}
+                    {{-- Log / Audit Log (manager+ exceto superadmin) --}}
                     @if($authUser->isManagerOrAbove() && !$authUser->isSuperAdmin())
-                        <li>
-                            <a class="dropdown-item {{ request()->routeIs('audit-log.index') ? 'active' : '' }}"
-                               href="{{ route('audit-log.index') }}">
-                                <i class="bi bi-journal-text"></i> Log de Atividades
-                            </a>
-                        </li>
+                        @if($authUser->isAdmin())
+                            <li>
+                                <a class="dropdown-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"
+                                   href="{{ route('admin.audit-logs.index') }}">
+                                    <i class="bi bi-shield-check"></i> Audit Log
+                                </a>
+                            </li>
+                        @else
+                            <li>
+                                <a class="dropdown-item {{ request()->routeIs('audit-log.index') ? 'active' : '' }}"
+                                   href="{{ route('audit-log.index') }}">
+                                    <i class="bi bi-journal-text"></i> Log de Atividades
+                                </a>
+                            </li>
+                        @endif
                     @endif
                 </ul>
             </li>
@@ -251,7 +260,7 @@
                 <li class="d-none d-lg-flex nav-divider-v"></li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {{ $adminActive ? 'active' : '' }}"
-                       href="#" role="button" data-bs-toggle="dropdown">
+                       href="javascript:void(0)" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-shield-lock"></i> Admin
                     </a>
                     <ul class="dropdown-menu shadow">
@@ -284,15 +293,6 @@
                 </li>
             @endif
 
-            {{-- Audit Log para admin (não superadmin) --}}
-            @if($authUser->isAdmin())
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"
-                       href="{{ route('admin.audit-logs.index') }}">
-                        <i class="bi bi-shield-check"></i> Audit Log
-                    </a>
-                </li>
-            @endif
 
         </ul>
 
