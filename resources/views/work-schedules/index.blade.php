@@ -15,7 +15,7 @@
             <tr>
                 <td class="fw-medium">{{ $s->name }}</td>
                 <td>{{ $s->weekly_hours }}h</td>
-                <td>{{ $s->is_default ? '<span class="badge bg-success">Sim</span>' : '—' }}</td>
+                <td>{!! $s->is_default ? '<span class="badge bg-success">Sim</span>' : '—' !!}</td>
                 <td><span class="badge bg-{{ $s->active ? 'success' : 'secondary' }}">{{ $s->active ? 'Ativo' : 'Inativo' }}</span></td>
                 <td class="text-end">
                     <a href="{{ route('work-schedules.edit', $s) }}" class="btn btn-sm btn-outline-secondary">Editar</a>

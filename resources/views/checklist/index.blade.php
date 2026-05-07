@@ -44,7 +44,8 @@
                     class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto bulk-btn"
                     style="font-size:.7rem"
                     data-ids="{{ json_encode($pendingIds) }}"
-                    data-count="{{ count($pendingIds) }}">
+                    data-count="{{ count($pendingIds) }}"
+                    data-category="{{ $category }}">
                 <i class="bi bi-check2-all me-1"></i>Marcar todos ({{ count($pendingIds) }})
             </button>
         @endif
@@ -170,21 +171,31 @@
 @endforelse
 
 {{-- Modal: Bulk Confirm --}}
-<div class="modal fade" id="bulkModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar conclusão em lote</h5>
+<div class="modal fade" id="bulkModal" tabindex="-1" aria-labelledby="bulkModalLabel" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                Isso vai concluir <strong id="bulkCount"></strong> tarefa(s) nesta categoria. Confirma?
+            <div class="modal-body text-center px-4 pb-2">
+                <div class="mb-3">
+                    <span style="font-size:2.5rem">📋</span>
+                </div>
+                <h5 class="fw-bold mb-2" id="bulkModalLabel">Marcar todas as tarefas?</h5>
+                <p class="text-muted mb-1">
+                    Você está prestes a concluir
+                    <strong id="bulkCount" class="text-dark"></strong> tarefa(s) pendente(s)
+                    da categoria <strong id="bulkCategory" class="text-dark"></strong>.
+                </p>
+                <p class="text-muted small mb-0">Esta ação pode ser desfeita individualmente usando "Reexecutar" em cada tarefa.</p>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="bulkConfirm">
+            <div class="modal-footer border-0 justify-content-center gap-2 pt-2">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary px-4" id="bulkConfirm">
                     <span class="spinner-border spinner-border-sm d-none me-1" id="bulkSpinner"></span>
-                    Confirmar
+                    <i class="bi bi-check2-all me-1" id="bulkIcon"></i>Sim, concluir todas
                 </button>
             </div>
         </div>
@@ -259,6 +270,12 @@
         btn.addEventListener('click', function () {
             bulkIds = JSON.parse(btn.dataset.ids);
             document.getElementById('bulkCount').textContent = btn.dataset.count;
+            document.getElementById('bulkCategory').textContent = btn.dataset.category || '';
+            var icon = document.getElementById('bulkIcon');
+            if (icon) icon.className = 'bi bi-check2-all me-1';
+            var confirmBtn = document.getElementById('bulkConfirm');
+            confirmBtn.disabled = false;
+            document.getElementById('bulkSpinner').classList.add('d-none');
             bulkModal.show();
         });
     });

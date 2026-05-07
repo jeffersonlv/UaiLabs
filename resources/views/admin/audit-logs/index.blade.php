@@ -56,7 +56,7 @@
         <tbody>
             @forelse($logs as $log)
             <tr>
-                <td class="text-muted" style="font-size:.8rem">{{ $log->created_at->format('d/m/Y H:i') }}</td>
+                <td class="text-muted" style="font-size:.8rem">{{ $log->timestamp?->format('d/m/Y H:i') ?? '—' }}</td>
                 <td>{{ $log->user?->name ?? '—' }}</td>
                 <td><code style="font-size:.75rem">{{ $log->action }}</code></td>
                 <td class="text-muted small">{{ $log->entity }}{{ $log->entity_id ? ' #'.$log->entity_id : '' }}</td>
