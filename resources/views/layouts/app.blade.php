@@ -130,10 +130,11 @@
 
             {{-- ── Dropdown Módulos ─────────────────────────────── --}}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {{ $modulesActive ? 'active' : '' }}"
-                   href="javascript:void(0)" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <button type="button"
+                        class="btn btn-link nav-link dropdown-toggle {{ $modulesActive ? 'active' : '' }}"
+                        data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-grid"></i> Módulos
-                </a>
+                </button>
                 <ul class="dropdown-menu shadow" style="min-width:230px">
                     @foreach($modules as $mod)
                         @php $hasAccess = $authUser->isSuperAdmin() || $moduleAccess->canAccess($authUser, $mod['key']); @endphp
@@ -259,10 +260,11 @@
             @if($authUser->isSuperAdmin())
                 <li class="d-none d-lg-flex nav-divider-v"></li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ $adminActive ? 'active' : '' }}"
-                       href="javascript:void(0)" role="button" data-bs-toggle="dropdown">
+                    <button type="button"
+                            class="btn btn-link nav-link dropdown-toggle {{ $adminActive ? 'active' : '' }}"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-shield-lock"></i> Admin
-                    </a>
+                    </button>
                     <ul class="dropdown-menu shadow">
                         <li>
                             <a class="dropdown-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
@@ -382,5 +384,50 @@
 </main>
 
 @stack('scripts')
+<script>
+(function () {
+    function initDropdowns() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (el) {
+                new bootstrap.Dropdown(el);
+            });
+            return;
+        }
+        // Fallback: vanilla JS toggle for when Bootstrap JS fails to load
+        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (toggle) {
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var parent = toggle.closest('.dropdown');
+                if (!parent) return;
+                var menu = parent.querySelector('.dropdown-menu');
+                if (!menu) return;
+                var open = menu.classList.contains('show');
+                document.querySelectorAll('.dropdown-menu.show').forEach(function (m) {
+                    m.classList.remove('show');
+                    m.previousElementSibling && m.previousElementSibling.setAttribute('aria-expanded', 'false');
+                });
+                if (!open) {
+                    menu.classList.add('show');
+                    toggle.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(function (m) {
+                    m.classList.remove('show');
+                });
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDropdowns);
+    } else {
+        initDropdowns();
+    }
+})();
+</script>
 </body>
 </html>
