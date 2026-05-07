@@ -230,7 +230,7 @@
 .stc-handle-done { left:calc(100% - 31px)!important;background:#fff!important;color:#198754!important;font-size:.9rem!important; }
 </style>
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     // ── Slide to confirm ───────────────────────────────────────
     document.querySelectorAll('.stc:not(.stc-done)').forEach(function (widget) {
         var track = widget.querySelector('.stc-track');
@@ -334,7 +334,7 @@
         el.addEventListener('hidden.bs.collapse', function () { stored[el.id] = false; localStorage.setItem(storeKey, JSON.stringify(stored)); });
         el.addEventListener('shown.bs.collapse',  function () { delete stored[el.id]; localStorage.setItem(storeKey, JSON.stringify(stored)); });
     });
-})();
+});
 </script>
 @endpush
 @endsection
