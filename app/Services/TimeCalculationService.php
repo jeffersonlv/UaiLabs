@@ -49,7 +49,7 @@ class TimeCalculationService
                 || Carbon::parse($s->end_at)->toDateString() === $dateKey
             );
 
-            $breakdown[$dateKey] = $this->calculateDay($dayEntries, $dayShifts);
+            $breakdown[$dateKey] = $this->calculateDay($dayEntries, $dayShifts, $period->copy()->startOfDay());
             $period->addDay();
         }
 
@@ -63,9 +63,14 @@ class TimeCalculationService
         return array_merge($totals, ['breakdown' => $breakdown]);
     }
 
-    private function calculateDay(Collection $entries, Collection $shifts): array
+    private function calculateDay(Collection $entries, Collection $shifts, Carbon $dayStart): array
     {
-        $scheduledMinutes = $shifts->sum(fn($s) => Carbon::parse($s->start_at)->diffInMinutes(Carbon::parse($s->end_at)));
+        $dayEnd = $dayStart->copy()->endOfDay();
+        $scheduledMinutes = $shifts->sum(function ($s) use ($dayStart, $dayEnd) {
+            $sStart = Carbon::parse($s->start_at)->max($dayStart);
+            $sEnd   = Carbon::parse($s->end_at)->min($dayEnd);
+            return $sStart->lt($sEnd) ? $sStart->diffInMinutes($sEnd) : 0;
+        });
 
         // Pair clock_in / clock_out
         $workedMinutes = 0;

@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Company;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
@@ -46,7 +47,10 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required|string|max:100']);
+        $request->validate([
+            'name' => ['required', 'string', 'max:100',
+                Rule::unique('categories')->where('company_id', $this->companyId())],
+        ]);
         $cat = Category::create(['name' => $request->name, 'description' => $request->description, 'company_id' => $this->companyId(), 'active' => true]);
         AuditLogger::crud('category.created', 'category', $cat->id, $cat->name);
         return redirect()->route('categories.index')->with('success', 'Categoria criada.');
@@ -61,7 +65,10 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         abort_if($category->company_id !== $this->companyId(), 403);
-        $request->validate(['name' => 'required|string|max:100']);
+        $request->validate([
+            'name' => ['required', 'string', 'max:100',
+                Rule::unique('categories')->where('company_id', $this->companyId())->ignore($category)],
+        ]);
         $category->update(['name' => $request->name, 'description' => $request->description, 'active' => $request->boolean('active')]);
         AuditLogger::crud('category.updated', 'category', $category->id, $category->name);
         return redirect()->route('categories.index')->with('success', 'Categoria atualizada.');

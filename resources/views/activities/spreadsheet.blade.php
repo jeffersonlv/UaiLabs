@@ -15,18 +15,25 @@
 {{-- Handsontable Community Edition --}}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.6.1/dist/handsontable.full.min.css">
 <script src="https://cdn.jsdelivr.net/npm/handsontable@14.6.1/dist/handsontable.full.min.js"></script>
+@php
+    $categoriesJson = json_encode($categories->map(fn($c) => ['id' => $c->id, 'name' => $c->name]),
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $unitsJson = json_encode($units->map(fn($u) => ['id' => $u->id, 'name' => $u->name]),
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $dataJson = json_encode($activities->map(fn($a) => [
+        'id'          => $a->id,
+        'title'       => $a->title,
+        'description' => $a->description,
+        'category_id' => $a->category_id,
+        'periodicity' => $a->periodicity,
+        'active'      => $a->active,
+    ]), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+@endphp
 <script>
 (function () {
-    var categories = @json($categories->map(fn($c) => ['id'=>$c->id,'name'=>$c->name]));
-    var units      = @json($units->map(fn($u) => ['id'=>$u->id,'name'=>$u->name]));
-    var data       = @json($activities->map(fn($a) => [
-        'id'           => $a->id,
-        'title'        => $a->title,
-        'description'  => $a->description,
-        'category_id'  => $a->category_id,
-        'periodicity'  => $a->periodicity,
-        'active'       => $a->active,
-    ]));
+    var categories = {!! $categoriesJson !!};
+    var units      = {!! $unitsJson !!};
+    var data       = {!! $dataJson !!};
 
     var catNames = categories.map(function (c) { return c.name; });
     var periodicities = ['diario','semanal','quinzenal','mensal','bimestral','semestral','anual','pontual'];

@@ -64,7 +64,7 @@
                 <td>
                     @if($day['has_open_pair'])
                         <span class="badge bg-warning text-dark">Ponto aberto</span>
-                    @elseif($day['worked_minutes'] === 0 && $d->isPast() && !$d->isToday())
+                    @elseif($day['worked_minutes'] === 0 && $day['scheduled_minutes'] > 0 && $d->isPast() && !$d->isToday())
                         <span class="badge bg-danger">Faltante</span>
                     @elseif($day['worked_minutes'] > 0)
                         <span class="badge bg-success">OK</span>

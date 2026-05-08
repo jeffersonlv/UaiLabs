@@ -55,7 +55,7 @@ class ShiftController extends Controller
 
         $templates = ShiftTemplate::where('unit_id', $unitId)->orderBy('name')->get();
 
-        return view('shifts.index', compact('units', 'unitId', 'date', 'view', 'shifts', 'unitUsers', 'templates'));
+        return view('shifts.index', compact('units', 'unitId', 'date', 'view', 'shifts', 'unitUsers', 'templates', 'start', 'end'));
     }
 
     public function store(StoreShiftRequest $request)
@@ -164,11 +164,11 @@ class ShiftController extends Controller
             'unit_id' => 'required|exists:units,id',
             'name'    => 'required|string|max:100',
             'period'  => 'required|in:weekly,biweekly,monthly',
-            'config'  => 'required|array',
         ]);
         $this->authorizeUnit((int) $request->unit_id);
 
-        ShiftTemplate::create($request->only('unit_id', 'name', 'period', 'config') + [
+        ShiftTemplate::create($request->only('unit_id', 'name', 'period') + [
+            'config'     => [],
             'company_id' => auth()->user()->company_id,
         ]);
 

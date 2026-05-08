@@ -126,13 +126,8 @@
     var items  = new vis.DataSet(shiftsData);
     var groupSet = new vis.DataSet(groups);
 
-    var dateStr = '{{ $date }}';
-    var viewMode = '{{ $view }}';
-    var startDate = new Date(dateStr);
-    var endDate   = new Date(dateStr);
-    if (viewMode === 'week')  endDate.setDate(endDate.getDate() + 7);
-    else if (viewMode === 'month') endDate.setMonth(endDate.getMonth() + 1);
-    else endDate.setDate(endDate.getDate() + 1);
+    var startDate = new Date('{!! $start->toIso8601String() !!}');
+    var endDate   = new Date('{!! $end->toIso8601String() !!}');
 
     var timeline = new vis.Timeline(container, items, groupSet, {
         start: startDate,
