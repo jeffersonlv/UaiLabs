@@ -18,26 +18,8 @@
 define('SECRET', 'uailabs2026');
 define('BASE',   dirname(__DIR__));
 
-// Detect correct PHP binary (Hostinger/LiteSpeed uses a versioned path)
-function detectPhp(): string {
-    $candidates = [
-        '/usr/local/lsws/lsphp82/bin/php',
-        '/usr/local/lsws/lsphp81/bin/php',
-        '/usr/bin/php8.2',
-        '/usr/bin/php82',
-        '/usr/local/bin/php8.2',
-        'php8.2',
-        'php',
-    ];
-    foreach ($candidates as $bin) {
-        $out = shell_exec($bin . ' -r "echo PHP_MAJOR_VERSION;" 2>/dev/null');
-        if (trim((string)$out) >= '8') return $bin;
-    }
-    return 'php';
-}
-
-define('PHP_BIN', detectPhp());
-define('ARTISAN', PHP_BIN . ' ' . BASE . '/artisan');
+define('PHP_BIN', 'php82');
+define('ARTISAN', 'php82 ' . BASE . '/artisan');
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 if (($_GET['token'] ?? '') !== SECRET) {
@@ -66,7 +48,7 @@ if (isset($_GET['all'])) {
     $_GET['optimize'] = 1;
 }
 
-if (isset($_GET['pull']))     $jobs[] = ['label' => 'git pull',           'result' => run('cd ' . BASE . ' && git pull origin main')];
+if (isset($_GET['pull']))     $jobs[] = ['label' => 'git pull',           'result' => run('cd ' . BASE . ' && source ~/.bashrc 2>/dev/null; git pull origin main')];
 if (isset($_GET['migrate']))  $jobs[] = ['label' => 'migrate --force',    'result' => artisan('migrate --force')];
 if (isset($_GET['seed']))     $jobs[] = ['label' => 'db:seed --force',    'result' => artisan('db:seed --force')];
 if (isset($_GET['clear']))    $jobs[] = ['label' => 'optimize:clear',     'result' => artisan('optimize:clear')];
