@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(function () {
             body.innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
         });
-    });
+    }
 
     // ── Persist accordion state ────────────────────────────────
     var storeKey = 'checklist_collapsed_{{ auth()->id() }}';
