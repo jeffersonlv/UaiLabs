@@ -207,11 +207,6 @@
                     <li><a class="dropdown-item" href="{{ route('password.edit') }}">
                         <i class="bi bi-key me-2"></i>Redefinir senha
                     </a></li>
-                    @if($authUser->company_id)
-                        <li><a class="dropdown-item" href="{{ route('profile.pin.edit') }}">
-                            <i class="bi bi-123 me-2"></i>Alterar PIN de Ponto
-                        </a></li>
-                    @endif
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form method="POST" action="{{ route('logout') }}">
@@ -405,12 +400,6 @@
            style="color:rgba(255,255,255,.8);font-size:.9rem" href="{{ route('password.edit') }}">
             <i class="bi bi-key" style="width:1.2rem;text-align:center"></i>Redefinir senha
         </a>
-        @if($authUser->company_id)
-            <a class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 text-decoration-none mb-1"
-               style="color:rgba(255,255,255,.8);font-size:.9rem" href="{{ route('profile.pin.edit') }}">
-                <i class="bi bi-123" style="width:1.2rem;text-align:center"></i>Alterar PIN de Ponto
-            </a>
-        @endif
 
         <form method="POST" action="{{ route('logout') }}">
             @csrf

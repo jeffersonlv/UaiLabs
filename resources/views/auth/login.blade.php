@@ -168,33 +168,6 @@
         .clockin-result .ci-msg  { color: #86efac; font-size: 1rem; margin: .6rem 0 0; }
         .clockin-result .ci-name { color: rgba(255,255,255,.4); font-size: .82rem; margin-top: .25rem; }
 
-        /* ── Unit selector step ──────────────────────────────────────────────── */
-        .unit-option {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            background: #0f172a;
-            border-radius: 10px;
-            padding: .7rem 1rem;
-            margin-bottom: .5rem;
-            cursor: pointer;
-            color: #fff;
-            font-size: .9rem;
-        }
-
-        .back-link {
-            background: none;
-            border: none;
-            color: rgba(255,255,255,.3);
-            font-size: .8rem;
-            width: 100%;
-            margin-top: .75rem;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .back-link:hover { color: rgba(255,255,255,.55); }
-
         /* ── Spinner ─────────────────────────────────────────────────────────── */
         .spinner {
             display: inline-block;
@@ -369,17 +342,7 @@
                 </button>
             </div>
 
-            {{-- Etapa 2: seleção de unidade (múltiplas unidades) --}}
-            <div id="stepUnit" style="display:none">
-                <p style="color:rgba(255,255,255,.55);font-size:.88rem;margin-bottom:1rem">
-                    Olá, <strong id="unitUserName" style="color:#fff"></strong>. Selecione a unidade:
-                </p>
-                <div id="unitList" class="mb-4"></div>
-                <button type="button" class="btn-grad" onclick="confirmUnit()">Confirmar</button>
-                <button type="button" class="back-link" onclick="backToCred()">← Voltar</button>
-            </div>
-
-            {{-- Etapa 3: resultado de clock_in (inline) --}}
+            {{-- Resultado de clock_in (inline) --}}
             <div class="clockin-result" id="clockinResult">
                 <div class="ci-icon"><i class="bi bi-check-circle-fill"></i></div>
                 <p class="ci-msg" id="clockinMsg"></p>
@@ -441,37 +404,22 @@
         if (tab === 'ponto') document.getElementById('pontoUser').focus();
     };
 
-    // ── Estado interno do Ponto ───────────────────────────────────────────
-    var _user = '';
-    var _pass = '';
+    // ── Estado interno ────────────────────────────────────────────────────
     var _coTimer;
 
-    // ── Submit de credenciais ─────────────────────────────────────────────
+    // ── Submit de ponto ───────────────────────────────────────────────────
     window.submitPonto = function () {
-        _user = document.getElementById('pontoUser').value.trim();
-        _pass = document.getElementById('pontoPass').value;
+        var user = document.getElementById('pontoUser').value.trim();
+        var pass = document.getElementById('pontoPass').value;
 
-        if (!_user || !_pass) {
+        if (!user || !pass) {
             showFeedback('error', 'Preencha usuário e senha.');
             return;
         }
 
         setLoading(true);
         clearFeedback();
-        punch({ username: _user, password: _pass });
-    };
 
-    // ── Confirmar unidade (etapa 2) ───────────────────────────────────────
-    window.confirmUnit = function () {
-        var sel = document.querySelector('input[name="unitRadio"]:checked');
-        if (!sel) { showFeedback('error', 'Selecione uma unidade.'); return; }
-        setLoading(true);
-        clearFeedback();
-        punch({ username: _user, password: _pass, unit_id: sel.value });
-    };
-
-    // ── Fetch de punch ────────────────────────────────────────────────────
-    function punch(payload) {
         fetch('{{ route('clock.credential') }}', {
             method: 'POST',
             headers: {
@@ -479,37 +427,29 @@
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Accept': 'application/json',
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ username: user, password: pass }),
         })
         .then(function (r) {
             return r.json().then(function (d) { return { ok: r.ok, data: d }; });
         })
         .then(function (res) {
             setLoading(false);
-
             if (!res.ok) {
-                backToCred();
                 showFeedback('error', res.data.error || 'Erro ao registrar ponto.');
                 return;
             }
-
-            if (res.data.needs_unit) {
-                showUnitStep(res.data.user_name, res.data.units);
-                return;
-            }
-
             handleSuccess(res.data);
         })
         .catch(function () {
             setLoading(false);
-            backToCred();
             showFeedback('error', 'Erro de conexão. Tente novamente.');
         });
-    }
+    };
 
     // ── Resultado de sucesso ──────────────────────────────────────────────
     function handleSuccess(data) {
-        resetForm();
+        document.getElementById('pontoUser').value = '';
+        document.getElementById('pontoPass').value = '';
 
         if (data.type === 'clock_in') {
             document.getElementById('stepCred').style.display = 'none';
@@ -550,31 +490,6 @@
         document.getElementById('pontoUser').focus();
     };
 
-    // ── Etapa de seleção de unidade ───────────────────────────────────────
-    function showUnitStep(name, units) {
-        document.getElementById('unitUserName').textContent = name;
-        var list = document.getElementById('unitList');
-        list.innerHTML = '';
-        units.forEach(function (u) {
-            var label = document.createElement('label');
-            label.className = 'unit-option';
-            label.innerHTML =
-                '<input type="radio" name="unitRadio" value="' + u.id + '" style="accent-color:#60a5fa"> ' +
-                u.name;
-            list.appendChild(label);
-        });
-        document.getElementById('stepCred').style.display = 'none';
-        document.getElementById('stepUnit').style.display = 'block';
-    }
-
-    window.backToCred = function () {
-        document.getElementById('stepUnit').style.display = 'none';
-        document.getElementById('stepCred').style.display = 'block';
-        setLoading(false);
-        document.getElementById('pontoPass').value = '';
-        document.getElementById('pontoPass').focus();
-    };
-
     // ── Helpers ───────────────────────────────────────────────────────────
     function setLoading(on) {
         var btn = document.getElementById('pontoBtn');
@@ -593,13 +508,6 @@
 
     function clearFeedback() {
         document.getElementById('pontoFeedback').innerHTML = '';
-    }
-
-    function resetForm() {
-        document.getElementById('pontoUser').value = '';
-        document.getElementById('pontoPass').value = '';
-        _user = '';
-        _pass = '';
     }
 
     // Enter key no campo de senha do Ponto

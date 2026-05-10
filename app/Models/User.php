@@ -13,15 +13,14 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'username', 'email', 'password', 'role',
-        'company_id', 'work_schedule_id', 'active', 'pin', 'pin_reset_required',
+        'company_id', 'work_schedule_id', 'active',
     ];
 
-    protected $hidden = ['password', 'remember_token', 'pin'];
+    protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
-        'email_verified_at'   => 'datetime',
-        'password'            => 'hashed',
-        'pin_reset_required'  => 'boolean',
+        'email_verified_at' => 'datetime',
+        'password'          => 'hashed',
     ];
 
     public function isSuperAdmin(): bool  { return $this->role === 'superadmin'; }
