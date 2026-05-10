@@ -329,20 +329,28 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function loadHistory(id) {
-        document.getElementById('historyBody').innerHTML = '<div class="text-center py-3"><span class="spinner-border text-secondary"></span></div>';
+        var body = document.getElementById('historyModal').querySelector('.modal-body');
+        body.innerHTML = '<div class="text-center py-3"><span class="spinner-border text-secondary"></span></div>';
         fetch('/checklist/' + id + '/history', {
             headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json'}
         })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            var actionMap = {complete:'Concluída',reopen:'Reaberta',complete_bulk:'Concluída (lote)',complete_overdue:'Concluída (atrasada)'};
+            var actionLabels = {
+                complete_bulk:    'Concluída (lote)',
+                complete:         'Concluída',
+                complete_overdue: 'Concluída (atrasada)',
+                reopen:           'Reaberta'
+            };
             var rows = data.logs.map(function (l) {
-                return '<tr><td>' + (actionMap[l.action] || l.action) + '</td><td>' + (l.user || '—') + '</td><td>' + (l.done_at || '—') + '</td><td class="text-muted">' + (l.justification || '') + '</td></tr>';
+                return '<tr><td>' + (actionLabels[l.action] || l.action) + '</td><td>' + (l.user || '—') + '</td><td>' + (l.done_at || '—') + '</td><td>' + (l.justification || '—') + '</td></tr>';
             }).join('');
-            document.getElementById('historyTitle').textContent = data.activity;
-            document.getElementById('historyBody').innerHTML = rows
-                ? '<table class="table table-sm"><thead><tr><th>Ação</th><th>Usuário</th><th>Hora</th><th>Justificativa</th></tr></thead><tbody>' + rows + '</tbody></table>'
-                : '<p class="text-muted">Sem histórico registrado.</p>';
+            body.innerHTML = rows
+                ? '<p class="fw-bold mb-2">' + data.activity + '</p><table class="table table-sm table-bordered"><thead><tr><th>Ação</th><th>Usuário</th><th>Hora</th><th>Justificativa</th></tr></thead><tbody>' + rows + '</tbody></table>'
+                : '<p class="fw-bold mb-2">' + data.activity + '</p><p class="text-muted">Sem histórico registrado.</p>';
+        })
+        .catch(function () {
+            body.innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
         });
     });
 
