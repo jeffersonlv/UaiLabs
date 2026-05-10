@@ -126,10 +126,14 @@ class ClockController extends Controller
         $unitId = $request->unit_id;
 
         if (! $unitId) {
-            $units = $user->units()->where('active', true)->orderBy('name')->get(['id', 'name']);
+            // Admins/superadmins see all company units; staff see only assigned units
+            $unitIds = $user->visibleUnitIds();
+            $units   = $unitIds !== null
+                ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get(['id', 'name'])
+                : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get(['id', 'name']);
 
             if ($units->isEmpty()) {
-                return response()->json(['error' => 'Usuário sem unidade vinculada.'], 422);
+                return response()->json(['error' => 'Nenhuma unidade ativa encontrada para este usuário.'], 422);
             }
 
             if ($units->count() > 1) {
