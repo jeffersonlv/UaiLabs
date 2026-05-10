@@ -18,8 +18,33 @@
 define('SECRET', 'uailabs2026');
 define('BASE',   dirname(__DIR__));
 
-define('PHP_BIN', 'php82');
-define('ARTISAN', 'bash -c "source ~/.bashrc 2>/dev/null && php82 ' . BASE . '/artisan"');
+// Try to resolve php82 absolute path
+function findPhpBin(): string {
+    $candidates = [
+        '/usr/bin/php82',
+        '/usr/local/bin/php82',
+        '/usr/bin/php8.2',
+        '/usr/local/bin/php8.2',
+        '/opt/cpanel/ea-php82/root/usr/bin/php',
+        '/usr/local/lsws/lsphp82/bin/php',
+        '/opt/alt/php82/usr/bin/php',
+    ];
+    // try which via env -i to avoid needing .bashrc
+    $which = trim((string) shell_exec('which php82 2>/dev/null'));
+    if ($which) return $which;
+    $which = trim((string) shell_exec('/usr/bin/which php82 2>/dev/null'));
+    if ($which) return $which;
+    // search common dirs
+    $found = trim((string) shell_exec('find /usr /opt -name "php82" -type f 2>/dev/null | head -1'));
+    if ($found) return $found;
+    foreach ($candidates as $p) {
+        if (is_executable($p)) return $p;
+    }
+    return 'php82'; // fallback
+}
+
+define('PHP_BIN', findPhpBin());
+define('ARTISAN', PHP_BIN . ' ' . BASE . '/artisan');
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 if (($_GET['token'] ?? '') !== SECRET) {
@@ -31,15 +56,12 @@ if (($_GET['token'] ?? '') !== SECRET) {
 function run(string $cmd): array {
     $output = [];
     $code   = 0;
-    exec('bash -c "source ~/.bashrc 2>/dev/null && ' . addcslashes($cmd, '"\\') . '" 2>&1', $output, $code);
+    exec($cmd . ' 2>&1', $output, $code);
     return ['cmd' => $cmd, 'output' => implode("\n", $output), 'code' => $code];
 }
 
 function artisan(string $args): array {
-    $output = [];
-    $code   = 0;
-    exec('bash -c "source ~/.bashrc 2>/dev/null && php82 ' . addcslashes(BASE . '/artisan ' . $args, '"\\') . '" 2>&1', $output, $code);
-    return ['cmd' => 'php82 artisan ' . $args, 'output' => implode("\n", $output), 'code' => $code];
+    return run(ARTISAN . ' ' . $args);
 }
 
 // ── Resolve which commands to run ─────────────────────────────────────────────
@@ -109,8 +131,8 @@ pre{background:#0f172a;border-radius:6px;padding:.75rem;font-size:.78rem;overflo
 
 <div class="info-row">
     <div class="info-item">PHP web <span><?= htmlspecialchars($phpVer) ?></span></div>
-    <div class="info-item">PHP CLI <span><?= htmlspecialchars(trim((string)shell_exec('bash -c "source ~/.bashrc 2>/dev/null && php82 -r \'echo phpversion();\'" 2>/dev/null')) ?: '?') ?></span></div>
-    <div class="info-item">PHP bin <span>php82</span></div>
+    <div class="info-item">PHP CLI <span><?= htmlspecialchars(trim((string)shell_exec(PHP_BIN . ' -r "echo phpversion();" 2>/dev/null')) ?: '?') ?></span></div>
+    <div class="info-item">PHP bin <span><?= htmlspecialchars(PHP_BIN) ?></span></div>
     <div class="info-item">Laravel <span><?= htmlspecialchars($laravelVer) ?></span></div>
     <div class="info-item">Servidor <span><?= htmlspecialchars($_SERVER['SERVER_NAME'] ?? 'n/a') ?></span></div>
     <div class="info-item">Data/hora <span><?= date('d/m/Y H:i:s') ?></span></div>
