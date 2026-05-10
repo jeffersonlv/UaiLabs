@@ -147,6 +147,9 @@ Route::get('/clock', [ClockController::class, 'show'])->name('clock.guest')->wit
 Route::post('/clock/guest', [ClockController::class, 'punch'])->name('clock.punch.guest')->withoutMiddleware(['auth']);
 Route::get('/clock/units', [ClockController::class, 'userUnits'])->name('clock.units')->withoutMiddleware(['auth']);
 
+// Credential-based punch for the Ponto tab on the login page (no auth required)
+Route::post('/clock/credential', [ClockController::class, 'credentialPunch'])->name('clock.credential');
+
 // BUG-07: /inventory → redireciona para /estoque (módulo em desenvolvimento)
 Route::get('/inventory', fn() => redirect()->route('estoque.index'))
     ->middleware(['auth', 'active', 'company.active']);
