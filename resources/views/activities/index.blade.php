@@ -78,10 +78,21 @@
                 <td class="text-end">
                     @if(!auth()->user()->isSuperAdmin())
                     <a href="{{ route('activities.edit', $act) }}" class="btn btn-sm btn-outline-secondary me-1">Editar</a>
-                    <form method="POST" action="{{ route('activities.destroy', $act) }}" class="d-inline">
-                        @csrf @method('DELETE')
-                        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Desativar?')">Desativar</button>
-                    </form>
+                    @if($act->active)
+                        <form method="POST" action="{{ route('activities.destroy', $act) }}" class="d-inline">
+                            @csrf @method('DELETE')
+                            <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Desativar esta atividade?')">Desativar</button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('activities.update', $act) }}" class="d-inline">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="title" value="{{ $act->title }}">
+                            <input type="hidden" name="category_id" value="{{ $act->category_id }}">
+                            <input type="hidden" name="periodicity" value="{{ $act->periodicity }}">
+                            <input type="hidden" name="active" value="1">
+                            <button class="btn btn-sm btn-outline-success" onclick="return confirm('Reativar esta atividade?')">Reativar</button>
+                        </form>
+                    @endif
                     @endif
                 </td>
             </tr>

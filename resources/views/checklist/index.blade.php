@@ -297,11 +297,38 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(function () { spinner.classList.add('d-none'); });
     });
 
-    // ── Occurrence history — Bootstrap 5 nativo via data-bs-toggle ─
+    // ── Occurrence history ─────────────────────────────────────────
+    function openHistoryModal(btn) {
+        var modal = document.getElementById('historyModal');
+        if (window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(modal).show();
+        } else {
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            document.body.classList.add('modal-open');
+            if (!document.querySelector('.modal-backdrop')) {
+                var bd = document.createElement('div');
+                bd.className = 'modal-backdrop fade show';
+                document.body.appendChild(bd);
+            }
+        }
+        loadHistory(btn.dataset.id);
+    }
+
+    document.querySelectorAll('.history-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            openHistoryModal(btn);
+        });
+    });
+
     document.getElementById('historyModal').addEventListener('show.bs.modal', function (e) {
         var btn = e.relatedTarget;
-        if (!btn) return;
-        var id = btn.dataset.id;
+        if (!btn || !btn.dataset.id) return;
+        loadHistory(btn.dataset.id);
+    });
+
+    function loadHistory(id) {
         document.getElementById('historyBody').innerHTML = '<div class="text-center py-3"><span class="spinner-border text-secondary"></span></div>';
         fetch('/checklist/' + id + '/history', {
             headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json'}

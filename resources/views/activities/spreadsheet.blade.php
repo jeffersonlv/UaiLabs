@@ -9,7 +9,7 @@
     </div>
 </div>
 <div id="save-status" class="mb-2 small"></div>
-<div id="spreadsheet" style="height:600px;overflow:auto;border:1px solid #dee2e6;border-radius:.375rem"></div>
+<div id="spreadsheet" style="height:calc(100vh - 160px);min-height:500px;overflow:hidden;border:1px solid #dee2e6;border-radius:.375rem"></div>
 
 @push('scripts')
 {{-- Handsontable Community Edition --}}
