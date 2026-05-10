@@ -18,32 +18,7 @@
 define('SECRET', 'uailabs2026');
 define('BASE',   dirname(__DIR__));
 
-// Try to resolve php82 absolute path
-function findPhpBin(): string {
-    $candidates = [
-        '/usr/bin/php82',
-        '/usr/local/bin/php82',
-        '/usr/bin/php8.2',
-        '/usr/local/bin/php8.2',
-        '/opt/cpanel/ea-php82/root/usr/bin/php',
-        '/usr/local/lsws/lsphp82/bin/php',
-        '/opt/alt/php82/usr/bin/php',
-    ];
-    // try which via env -i to avoid needing .bashrc
-    $which = trim((string) shell_exec('which php82 2>/dev/null'));
-    if ($which) return $which;
-    $which = trim((string) shell_exec('/usr/bin/which php82 2>/dev/null'));
-    if ($which) return $which;
-    // search common dirs
-    $found = trim((string) shell_exec('find /usr /opt -name "php82" -type f 2>/dev/null | head -1'));
-    if ($found) return $found;
-    foreach ($candidates as $p) {
-        if (is_executable($p)) return $p;
-    }
-    return 'php82'; // fallback
-}
-
-define('PHP_BIN', findPhpBin());
+define('PHP_BIN', '/opt/alt/php82/usr/bin/php');
 define('ARTISAN', PHP_BIN . ' ' . BASE . '/artisan');
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
