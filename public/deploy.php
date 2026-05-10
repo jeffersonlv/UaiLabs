@@ -19,7 +19,7 @@ define('SECRET', 'uailabs2026');
 define('BASE',   dirname(__DIR__));
 
 define('PHP_BIN', 'php82');
-define('ARTISAN', 'php82 ' . BASE . '/artisan');
+define('ARTISAN', 'bash -c "source ~/.bashrc 2>/dev/null && php82 ' . BASE . '/artisan"');
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 if (($_GET['token'] ?? '') !== SECRET) {
@@ -31,12 +31,15 @@ if (($_GET['token'] ?? '') !== SECRET) {
 function run(string $cmd): array {
     $output = [];
     $code   = 0;
-    exec($cmd . ' 2>&1', $output, $code);
+    exec('bash -c "source ~/.bashrc 2>/dev/null && ' . addcslashes($cmd, '"\\') . '" 2>&1', $output, $code);
     return ['cmd' => $cmd, 'output' => implode("\n", $output), 'code' => $code];
 }
 
 function artisan(string $args): array {
-    return run(ARTISAN . ' ' . $args);
+    $output = [];
+    $code   = 0;
+    exec('bash -c "source ~/.bashrc 2>/dev/null && php82 ' . addcslashes(BASE . '/artisan ' . $args, '"\\') . '" 2>&1', $output, $code);
+    return ['cmd' => 'php82 artisan ' . $args, 'output' => implode("\n", $output), 'code' => $code];
 }
 
 // ── Resolve which commands to run ─────────────────────────────────────────────
@@ -48,7 +51,7 @@ if (isset($_GET['all'])) {
     $_GET['optimize'] = 1;
 }
 
-if (isset($_GET['pull']))     $jobs[] = ['label' => 'git pull',           'result' => run('cd ' . BASE . ' && source ~/.bashrc 2>/dev/null; git pull origin main')];
+if (isset($_GET['pull']))     $jobs[] = ['label' => 'git pull',           'result' => run('cd ' . BASE . ' && git pull origin main')];
 if (isset($_GET['migrate']))  $jobs[] = ['label' => 'migrate --force',    'result' => artisan('migrate --force')];
 if (isset($_GET['seed']))     $jobs[] = ['label' => 'db:seed --force',    'result' => artisan('db:seed --force')];
 if (isset($_GET['clear']))    $jobs[] = ['label' => 'optimize:clear',     'result' => artisan('optimize:clear')];
@@ -106,8 +109,8 @@ pre{background:#0f172a;border-radius:6px;padding:.75rem;font-size:.78rem;overflo
 
 <div class="info-row">
     <div class="info-item">PHP web <span><?= htmlspecialchars($phpVer) ?></span></div>
-    <div class="info-item">PHP CLI <span><?= htmlspecialchars(trim((string)shell_exec(PHP_BIN . ' -r "echo phpversion();" 2>/dev/null')) ?: '?') ?></span></div>
-    <div class="info-item">PHP bin <span><?= htmlspecialchars(PHP_BIN) ?></span></div>
+    <div class="info-item">PHP CLI <span><?= htmlspecialchars(trim((string)shell_exec('bash -c "source ~/.bashrc 2>/dev/null && php82 -r \'echo phpversion();\'" 2>/dev/null')) ?: '?') ?></span></div>
+    <div class="info-item">PHP bin <span>php82</span></div>
     <div class="info-item">Laravel <span><?= htmlspecialchars($laravelVer) ?></span></div>
     <div class="info-item">Servidor <span><?= htmlspecialchars($_SERVER['SERVER_NAME'] ?? 'n/a') ?></span></div>
     <div class="info-item">Data/hora <span><?= date('d/m/Y H:i:s') ?></span></div>
