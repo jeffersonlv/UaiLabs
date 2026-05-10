@@ -9,6 +9,89 @@ define('DIAG_TOKEN', 'uailabs2026');
 define('APP_ROOT',   dirname(__DIR__));
 define('MAX_LOG_LINES', 120);
 
+// ── Modo debug de punch (GET ?punch_user=jonatas) ─────────────────────────────
+if (isset($_GET['punch_user']) && ($_GET['token'] ?? '') === DIAG_TOKEN) {
+    header('Content-Type: application/json; charset=utf-8');
+
+    $envFile2 = APP_ROOT . '/.env';
+    $env2 = [];
+    foreach (file($envFile2, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        if (str_starts_with(trim($line), '#') || !str_contains($line, '=')) continue;
+        [$k, $v] = explode('=', $line, 2);
+        $env2[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+    }
+
+    try {
+        $pdo2 = new PDO(
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                $env2['DB_HOST'] ?? '127.0.0.1',
+                $env2['DB_PORT'] ?? '3306',
+                $env2['DB_DATABASE'] ?? 'laravel'),
+            $env2['DB_USERNAME'] ?? 'root',
+            $env2['DB_PASSWORD'] ?? '',
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+
+        $username = trim($_GET['punch_user']);
+
+        // 1. Find user
+        $stmt = $pdo2->prepare("SELECT id, name, username, role, active, pin, company_id, work_schedule_id FROM users WHERE username = ? LIMIT 1");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            echo json_encode(['step' => 'find_user', 'result' => 'NOT FOUND', 'username' => $username]);
+            exit;
+        }
+
+        $result = [
+            'step'           => 'user_found',
+            'id'             => $user['id'],
+            'name'           => $user['name'],
+            'username'       => $user['username'],
+            'role'           => $user['role'],
+            'active'         => (bool)$user['active'],
+            'has_pin'        => !empty($user['pin']),
+            'has_password'   => true,
+            'company_id'     => $user['company_id'],
+            'work_schedule'  => $user['work_schedule_id'] ?? null,
+        ];
+
+        // 2. Check direct user_units
+        $stmt2 = $pdo2->prepare("SELECT u.id, u.name, u.active FROM user_units uu JOIN units u ON u.id = uu.unit_id WHERE uu.user_id = ?");
+        $stmt2->execute([$user['id']]);
+        $directUnits = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        $result['direct_units'] = $directUnits;
+
+        // 3. Check all company units (admin fallback)
+        $isAdmin = in_array($user['role'], ['superadmin', 'admin']);
+        $result['is_admin_or_above'] = $isAdmin;
+
+        if ($isAdmin) {
+            $stmt3 = $pdo2->prepare("SELECT id, name, active FROM units WHERE company_id = ? AND active = 1 ORDER BY name");
+            $stmt3->execute([$user['company_id']]);
+            $result['company_units_active'] = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // 4. Last time entry today
+        $stmt4 = $pdo2->prepare("SELECT type, recorded_at FROM time_entries WHERE user_id = ? AND DATE(recorded_at) = CURDATE() AND type != 'correction' ORDER BY recorded_at DESC LIMIT 1");
+        $stmt4->execute([$user['id']]);
+        $last = $stmt4->fetch(PDO::FETCH_ASSOC);
+        $result['last_entry_today']  = $last ?: null;
+        $result['next_punch_type']   = (!$last || $last['type'] === 'clock_out') ? 'clock_in' : 'clock_out';
+
+        // 5. Route check
+        $result['route_exists'] = file_exists(APP_ROOT . '/app/Http/Controllers/ClockController.php')
+            && str_contains(file_get_contents(APP_ROOT . '/app/Http/Controllers/ClockController.php'), 'credentialPunch');
+
+        echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+    }
+    exit;
+}
+
 // ── Autenticação ──────────────────────────────────────────────────────────────
 if (($_GET['token'] ?? '') !== DIAG_TOKEN) {
     http_response_code(403);
