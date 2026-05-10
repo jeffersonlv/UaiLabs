@@ -38,8 +38,6 @@
     $modulesActive = request()->routeIs(...$moduleRoutePatterns);
     $adminActive   = request()->routeIs('admin.dashboard','admin.companies.*','admin.users.*','admin.audit-logs.*');
 
-    $canClock = !$authUser->isSuperAdmin() && $authUser->company_id
-                && $moduleAccess->canAccess($authUser, 'time_clock');
 @endphp
 
 <nav class="navbar navbar-dark sticky-top" style="background:#1a1a2e;box-shadow:0 2px 8px rgba(0,0,0,.35)">
@@ -172,11 +170,6 @@
 
         {{-- Desktop right --}}
         <div class="d-none d-md-flex align-items-center gap-1 ms-auto">
-            @if($canClock)
-                <a class="btn btn-link text-white p-2" href="{{ url('/clock') }}" title="Bater Ponto">
-                    <i class="bi bi-fingerprint fs-5"></i>
-                </a>
-            @endif
             @if($authUser->isSuperAdmin())
                 <a class="btn btn-link text-white p-2" href="{{ route('admin.support-requests.index') }}" title="Suporte">
                     <i class="bi bi-headset fs-5"></i>
@@ -382,12 +375,6 @@
 
         <hr style="border-color:rgba(255,255,255,.1)">
 
-        @if($canClock)
-            <a class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 text-decoration-none mb-1"
-               style="color:rgba(255,255,255,.8);font-size:.9rem" href="{{ url('/clock') }}">
-                <i class="bi bi-fingerprint" style="width:1.2rem;text-align:center"></i>Bater Ponto
-            </a>
-        @endif
 
         @if(!$authUser->isSuperAdmin() && $authUser->isManagerOrAbove() && $authUser->company_id)
             <a class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 text-decoration-none mb-1"
