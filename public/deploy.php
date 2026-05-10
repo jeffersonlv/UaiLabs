@@ -17,7 +17,27 @@
 
 define('SECRET', 'uailabs2026');
 define('BASE',   dirname(__DIR__));
-define('ARTISAN', 'php ' . BASE . '/artisan');
+
+// Detect correct PHP binary (Hostinger/LiteSpeed uses a versioned path)
+function detectPhp(): string {
+    $candidates = [
+        '/usr/local/lsws/lsphp82/bin/php',
+        '/usr/local/lsws/lsphp81/bin/php',
+        '/usr/bin/php8.2',
+        '/usr/bin/php82',
+        '/usr/local/bin/php8.2',
+        'php8.2',
+        'php',
+    ];
+    foreach ($candidates as $bin) {
+        $out = shell_exec($bin . ' -r "echo PHP_MAJOR_VERSION;" 2>/dev/null');
+        if (trim((string)$out) >= '8') return $bin;
+    }
+    return 'php';
+}
+
+define('PHP_BIN', detectPhp());
+define('ARTISAN', PHP_BIN . ' ' . BASE . '/artisan');
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 if (($_GET['token'] ?? '') !== SECRET) {
@@ -103,7 +123,9 @@ pre{background:#0f172a;border-radius:6px;padding:.75rem;font-size:.78rem;overflo
 <h1>Deploy · UaiLabs</h1>
 
 <div class="info-row">
-    <div class="info-item">PHP <span><?= htmlspecialchars($phpVer) ?></span></div>
+    <div class="info-item">PHP web <span><?= htmlspecialchars($phpVer) ?></span></div>
+    <div class="info-item">PHP CLI <span><?= htmlspecialchars(trim((string)shell_exec(PHP_BIN . ' -r "echo phpversion();" 2>/dev/null')) ?: '?') ?></span></div>
+    <div class="info-item">PHP bin <span><?= htmlspecialchars(PHP_BIN) ?></span></div>
     <div class="info-item">Laravel <span><?= htmlspecialchars($laravelVer) ?></span></div>
     <div class="info-item">Servidor <span><?= htmlspecialchars($_SERVER['SERVER_NAME'] ?? 'n/a') ?></span></div>
     <div class="info-item">Data/hora <span><?= date('d/m/Y H:i:s') ?></span></div>
