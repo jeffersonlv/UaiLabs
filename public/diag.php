@@ -102,6 +102,54 @@ if (file_exists($logPath)) {
     $logLines = array_slice($all, -MAX_LOG_LINES);
 }
 
+// ── Usuários e unidades ───────────────────────────────────────────────────────
+$users = [];
+if ($dbOk) {
+    $stmt = $pdo->query("
+        SELECT u.id, u.name, u.username, u.email, u.role, u.active,
+               u.pin IS NOT NULL AS has_pin,
+               u.work_schedule_id,
+               GROUP_CONCAT(un.name ORDER BY un.name SEPARATOR ', ') AS units
+        FROM users u
+        LEFT JOIN user_units uu ON uu.user_id = u.id
+        LEFT JOIN units un      ON un.id = uu.unit_id
+        GROUP BY u.id
+        ORDER BY u.name
+    ");
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ── Últimas entradas de ponto (time_entries) ──────────────────────────────────
+$timeEntries = [];
+if ($dbOk) {
+    $stmt = $pdo->query("
+        SELECT te.id, u.name AS user_name, un.name AS unit_name,
+               te.type, te.recorded_at, te.ip_address
+        FROM time_entries te
+        JOIN users u  ON u.id  = te.user_id
+        JOIN units un ON un.id = te.unit_id
+        ORDER BY te.recorded_at DESC
+        LIMIT 20
+    ");
+    $timeEntries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ── Linhas do log filtradas por erro relevante ────────────────────────────────
+$logErrors = [];
+if (!empty($logLines)) {
+    foreach ($logLines as $line) {
+        if (preg_match('/\.(ERROR|CRITICAL|ALERT|EMERGENCY)/i', $line)
+            || str_contains($line, 'Exception')
+            || str_contains($line, 'SQLSTATE')
+            || str_contains($line, 'clock')
+            || str_contains($line, 'credential')
+            || str_contains($line, 'punch')
+        ) {
+            $logErrors[] = $line;
+        }
+    }
+}
+
 // ── Permissões de diretório ───────────────────────────────────────────────────
 $dirs = [
     'storage/logs'          => APP_ROOT . '/storage/logs',
@@ -234,6 +282,90 @@ row('QUEUE_CONNECTION', env_val($env, 'QUEUE_CONNECTION'));
     </tr>
 <?php endforeach ?>
 </table>
+<?php endif ?>
+
+<?php /* ── Usuários e unidades ──────────────────────────────────────────── */ ?>
+<?php section('Usuários e Unidades Vinculadas') ?>
+<?php if (empty($users)): ?>
+<p style="color:#475569;padding:.5rem 0">Nenhum usuário encontrado.</p>
+<?php else: ?>
+<table>
+    <thead>
+        <tr style="background:#0f172a">
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Nome</th>
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Username</th>
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Role</th>
+            <th style="padding:.4rem .6rem;text-align:center;color:#64748b;font-size:.78rem">Ativo</th>
+            <th style="padding:.4rem .6rem;text-align:center;color:#64748b;font-size:.78rem">PIN</th>
+            <th style="padding:.4rem .6rem;text-align:center;color:#64748b;font-size:.78rem">Horário</th>
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Unidades</th>
+        </tr>
+    </thead>
+<?php foreach ($users as $u): ?>
+    <tr>
+        <td style="padding:.35rem .6rem;color:#e2e8f0"><?= htmlspecialchars($u['name']) ?></td>
+        <td style="padding:.35rem .6rem;color:#94a3b8"><?= htmlspecialchars($u['username'] ?? '—') ?></td>
+        <td style="padding:.35rem .6rem;color:#94a3b8"><?= htmlspecialchars($u['role']) ?></td>
+        <td style="padding:.35rem .6rem;text-align:center"><?= badge((bool)$u['active'], 'Sim', 'Não') ?></td>
+        <td style="padding:.35rem .6rem;text-align:center"><?= badge((bool)$u['has_pin'], 'Sim', 'Não') ?></td>
+        <td style="padding:.35rem .6rem;text-align:center"><?= $u['work_schedule_id'] ? badge(true, 'Sim') : badge(false, '', 'Não') ?></td>
+        <td style="padding:.35rem .6rem;color:<?= $u['units'] ? '#34d399' : '#ef4444' ?>">
+            <?= $u['units'] ? htmlspecialchars($u['units']) : '⚠ Sem unidade' ?>
+        </td>
+    </tr>
+<?php endforeach ?>
+</table>
+<?php endif ?>
+
+<?php /* ── Últimas entradas de ponto ────────────────────────────────────── */ ?>
+<?php section('Últimas 20 Entradas de Ponto') ?>
+<?php if (empty($timeEntries)): ?>
+<p style="color:#475569;padding:.5rem 0">Nenhuma entrada de ponto registrada.</p>
+<?php else: ?>
+<table>
+    <thead>
+        <tr style="background:#0f172a">
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Data/Hora</th>
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Usuário</th>
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Unidade</th>
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">Tipo</th>
+            <th style="padding:.4rem .6rem;text-align:left;color:#64748b;font-size:.78rem">IP</th>
+        </tr>
+    </thead>
+<?php foreach ($timeEntries as $te): ?>
+    <tr>
+        <td style="padding:.35rem .6rem;color:#94a3b8"><?= htmlspecialchars($te['recorded_at']) ?></td>
+        <td style="padding:.35rem .6rem;color:#e2e8f0"><?= htmlspecialchars($te['user_name']) ?></td>
+        <td style="padding:.35rem .6rem;color:#94a3b8"><?= htmlspecialchars($te['unit_name']) ?></td>
+        <td style="padding:.35rem .6rem">
+            <?php if ($te['type'] === 'clock_in'): ?>
+                <span style="color:#34d399;font-weight:700">↑ Entrada</span>
+            <?php elseif ($te['type'] === 'clock_out'): ?>
+                <span style="color:#60a5fa;font-weight:700">↓ Saída</span>
+            <?php else: ?>
+                <span style="color:#fbbf24"><?= htmlspecialchars($te['type']) ?></span>
+            <?php endif ?>
+        </td>
+        <td style="padding:.35rem .6rem;color:#475569;font-size:.8rem"><?= htmlspecialchars($te['ip_address'] ?? '—') ?></td>
+    </tr>
+<?php endforeach ?>
+</table>
+<?php endif ?>
+
+<?php /* ── Erros relevantes do log ──────────────────────────────────────── */ ?>
+<?php section('Erros e Eventos Relevantes no Log') ?>
+<?php if (empty($logErrors)): ?>
+<p style="color:#34d399;padding:.5rem 0">✓ Nenhum erro relevante encontrado nas últimas <?= MAX_LOG_LINES ?> linhas.</p>
+<?php else: ?>
+<pre><?php
+foreach ($logErrors as $line) {
+    $class = 'err';
+    if (str_contains($line, 'clock') || str_contains($line, 'credential') || str_contains($line, 'punch')) {
+        $class = 'warn';
+    }
+    echo "<span class='{$class}'>" . htmlspecialchars($line) . "</span>\n";
+}
+?></pre>
 <?php endif ?>
 
 <?php /* ── Permissões de diretório ──────────────────────────────────────── */ ?>
