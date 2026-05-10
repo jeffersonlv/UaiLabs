@@ -38,7 +38,7 @@
                 aria-expanded="true">
             <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
-        <span class="text-uppercase text-muted fw-semibold" style="font-size:.75rem;letter-spacing:.05em">{{ $category }}</span>
+        <span class="text-uppercase text-muted fw-semibold cat-header" style="font-size:.75rem;letter-spacing:.05em" data-cat="{{ $category }}">{{ $category }}</span>
         @if(count($pendingIds))
             <button type="button"
                     class="btn btn-sm btn-primary py-0 px-2 ms-auto bulk-btn"
@@ -133,30 +133,29 @@
                         </span>
 
                         @if($done)
-                            <div class="stc stc-done" style="width:164px">
+                            <div class="stc stc-done">
                                 <div class="stc-track">
-                                    <span class="stc-label stc-label-done">Concluída ✓</span>
-                                    <div class="stc-handle stc-handle-done">✓</div>
+                                    <span class="stc-label stc-label-done"><i class="bi bi-check-lg me-1"></i>Concluída</span>
                                 </div>
                             </div>
-                            <form method="POST" action="{{ route('checklist.complete', $occ) }}" class="mt-1">
+                            <form method="POST" action="{{ route('checklist.complete', $occ) }}" class="reexec-wrap w-100 mt-1">
                                 @csrf @method('PATCH')
-                                <div class="reexec-wrap" style="width:164px">
-                                    <button type="button" class="btn btn-sm btn-outline-warning w-100 reexec-toggle">Reexecutar</button>
-                                    <div class="reexec-form mt-1" style="display:none">
-                                        <input name="justification" placeholder="Justificativa obrigatória"
-                                               class="form-control form-control-sm mb-1" required>
-                                        <button type="submit" class="btn btn-sm btn-warning w-100">Confirmar</button>
-                                    </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary w-100 reexec-toggle" style="font-size:.75rem">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reexecutar
+                                </button>
+                                <div class="reexec-form mt-1" style="display:none">
+                                    <input name="justification" placeholder="Justificativa obrigatória"
+                                           class="form-control form-control-sm mb-1" required>
+                                    <button type="submit" class="btn btn-sm btn-warning w-100">Confirmar</button>
                                 </div>
                             </form>
                         @else
-                            <form method="POST" action="{{ route('checklist.complete', $occ) }}">
+                            <form method="POST" action="{{ route('checklist.complete', $occ) }}" class="w-100">
                                 @csrf @method('PATCH')
-                                <div class="stc" style="width:164px" title="Deslize para concluir">
+                                <div class="stc" title="Deslize para concluir">
                                     <div class="stc-track">
-                                        <span class="stc-label">Deslize para concluir</span>
-                                        <div class="stc-handle">&#8250;</div>
+                                        <span class="stc-label">Concluir</span>
+                                        <div class="stc-handle"><i class="bi bi-chevron-right"></i></div>
                                     </div>
                                 </div>
                             </form>
@@ -171,6 +170,9 @@
 @empty
 <p class="text-muted">Nenhuma tarefa para hoje.</p>
 @endforelse
+
+{{-- Chip flutuante de categoria --}}
+<div id="floatingCat" aria-hidden="true"></div>
 
 {{-- Modal: Bulk Confirm --}}
 <div class="modal fade" id="bulkModal" tabindex="-1" aria-labelledby="bulkModalLabel" aria-modal="true">
@@ -221,15 +223,110 @@
 
 @push('scripts')
 <style>
-.stc-track { position:relative;height:34px;background:#d1e7dd;border-radius:17px;overflow:hidden;user-select:none;touch-action:none;cursor:grab; }
-.stc-track:active { cursor:grabbing; }
-.stc-label { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#146c43;pointer-events:none;padding-left:32px;transition:opacity .15s;white-space:nowrap; }
-.stc-handle { position:absolute;left:3px;top:3px;width:28px;height:28px;background:#198754;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;line-height:1;pointer-events:none;will-change:left; }
-.stc-submitting .stc-track { background:#198754;cursor:default; }
-.stc-submitting .stc-handle { background:#fff;color:#198754;font-size:.9rem; }
-.stc-done .stc-track { background:#198754;cursor:default;opacity:.85; }
-.stc-label-done { color:#fff!important;padding-left:32px;font-weight:500; }
-.stc-handle-done { left:calc(100% - 31px)!important;background:#fff!important;color:#198754!important;font-size:.9rem!important; }
+/* ── STC — Slide to confirm ─────────────────────────────────────── */
+.stc { width: 100%; }
+
+/* Pendente */
+.stc-track {
+    position: relative;
+    height: 46px;
+    background: #fff8e1;
+    border: 2px solid #ffca28;
+    border-radius: 8px;
+    overflow: hidden;
+    user-select: none;
+    touch-action: none;
+    cursor: grab;
+}
+.stc-track:active { cursor: grabbing; }
+
+.stc-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 48px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #6d4c00;
+    pointer-events: none;
+    transition: opacity .15s;
+    white-space: nowrap;
+    letter-spacing: .01em;
+}
+
+.stc-handle {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: 36px;
+    height: 36px;
+    background: #ffca28;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5d3f00;
+    font-size: 1rem;
+    pointer-events: none;
+    will-change: left;
+}
+
+/* Enviando */
+.stc-submitting .stc-track {
+    background: #198754;
+    border-color: #198754;
+    cursor: default;
+}
+.stc-submitting .stc-handle {
+    background: rgba(255,255,255,.25);
+    color: #fff;
+    font-size: .85rem;
+}
+.stc-submitting .stc-label { color: #fff; padding-left: 48px; }
+
+/* Concluída */
+.stc-done .stc-track {
+    background: #d1e7dd;
+    border: 2px solid #198754;
+    cursor: default;
+}
+.stc-label-done {
+    color: #146c43 !important;
+    font-weight: 700 !important;
+    padding-left: 0 !important;
+    font-size: .82rem !important;
+    justify-content: center !important;
+}
+
+/* ── Chip flutuante de categoria ────────────────────────────────── */
+#floatingCat {
+    position: fixed;
+    top: 62px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    background: rgba(15, 23, 42, .82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: rgba(255,255,255,.9);
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: .3rem 1rem;
+    border-radius: 20px;
+    z-index: 900;
+    opacity: 0;
+    transition: opacity .2s ease, transform .2s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+#floatingCat.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -240,17 +337,49 @@ document.addEventListener('DOMContentLoaded', function () {
         var label = widget.querySelector('.stc-label');
         var form = widget.closest('form');
         var dragging = false, startCX = 0, currentX = 0;
-        function maxX() { return track.offsetWidth - handle.offsetWidth - 6; }
+        function maxX() { return track.offsetWidth - handle.offsetWidth - 8; }
         function cx(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
-        function setPos(x, anim) { handle.style.transition = anim ? 'left .2s ease' : 'none'; handle.style.left = (3 + x) + 'px'; label.style.opacity = Math.max(0, 1 - x / maxX()); }
+        function setPos(x, anim) { handle.style.transition = anim ? 'left .2s ease' : 'none'; handle.style.left = (4 + x) + 'px'; label.style.opacity = Math.max(0, 1 - x / maxX()); }
         track.addEventListener('mousedown', function (e) { if (widget.classList.contains('stc-submitting')) return; dragging = true; startCX = cx(e) - currentX; e.preventDefault(); });
         track.addEventListener('touchstart', function (e) { if (widget.classList.contains('stc-submitting')) return; dragging = true; startCX = cx(e) - currentX; e.preventDefault(); }, {passive:false});
         document.addEventListener('mousemove', function (e) { if (!dragging) return; currentX = Math.max(0, Math.min(cx(e) - startCX, maxX())); setPos(currentX, false); e.preventDefault(); });
         document.addEventListener('touchmove', function (e) { if (!dragging) return; currentX = Math.max(0, Math.min(cx(e) - startCX, maxX())); setPos(currentX, false); e.preventDefault(); }, {passive:false});
-        function onEnd() { if (!dragging) return; dragging = false; if (currentX >= maxX() * 0.82) { currentX = maxX(); setPos(currentX, true); label.style.opacity = 0; widget.classList.add('stc-submitting'); handle.innerHTML = '✓'; setTimeout(function () { form.submit(); }, 280); } else { currentX = 0; setPos(0, true); } }
+        function onEnd() {
+            if (!dragging) return;
+            dragging = false;
+            if (currentX >= maxX() * 0.82) {
+                currentX = maxX();
+                setPos(currentX, true);
+                label.style.opacity = 0;
+                widget.classList.add('stc-submitting');
+                handle.innerHTML = '<i class="bi bi-check-lg"></i>';
+                setTimeout(function () { form.submit(); }, 300);
+            } else {
+                currentX = 0;
+                setPos(0, true);
+            }
+        }
         document.addEventListener('mouseup', onEnd);
         document.addEventListener('touchend', onEnd);
     });
+
+    // ── Chip flutuante de categoria ────────────────────────────
+    var chip = document.getElementById('floatingCat');
+    var catHeaders = document.querySelectorAll('.cat-header');
+    function updateChip() {
+        var current = null;
+        catHeaders.forEach(function (h) {
+            if (h.getBoundingClientRect().top < 72) current = h;
+        });
+        if (current) {
+            chip.textContent = current.dataset.cat;
+            chip.classList.add('visible');
+        } else {
+            chip.classList.remove('visible');
+        }
+    }
+    window.addEventListener('scroll', updateChip, { passive: true });
+    updateChip();
 
     // ── Reexecutar toggle ──────────────────────────────────────
     document.querySelectorAll('.reexec-toggle').forEach(function (btn) {
