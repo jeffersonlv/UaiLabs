@@ -50,7 +50,7 @@ class CategoryController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:100',
                 Rule::unique('categories')->where('company_id', $this->companyId())],
-        ]);
+        ], ['name.unique' => 'Já existe uma categoria com este nome.']);
         $cat = Category::create(['name' => $request->name, 'description' => $request->description, 'company_id' => $this->companyId(), 'active' => true]);
         AuditLogger::crud('category.created', 'category', $cat->id, $cat->name);
         return redirect()->route('categories.index')->with('success', 'Categoria criada.');
@@ -68,7 +68,7 @@ class CategoryController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:100',
                 Rule::unique('categories')->where('company_id', $this->companyId())->ignore($category)],
-        ]);
+        ], ['name.unique' => 'Já existe uma categoria com este nome.']);
         $category->update(['name' => $request->name, 'description' => $request->description, 'active' => $request->boolean('active')]);
         AuditLogger::crud('category.updated', 'category', $category->id, $category->name);
         return redirect()->route('categories.index')->with('success', 'Categoria atualizada.');

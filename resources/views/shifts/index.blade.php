@@ -129,7 +129,8 @@
     var startDate = new Date('{!! $start->toIso8601String() !!}');
     var endDate   = new Date('{!! $end->toIso8601String() !!}');
 
-    var timeline = new vis.Timeline(container, items, groupSet, {
+    var viewMode = '{{ $view }}';
+    var tlOptions = {
         start: startDate,
         end:   endDate,
         orientation: 'top',
@@ -137,7 +138,14 @@
         zoomMin: 1000 * 60 * 60,
         zoomMax: 1000 * 60 * 60 * 24 * 31,
         tooltip: { followMouse: true },
-    });
+    };
+    if (viewMode === 'month') {
+        tlOptions.timeAxis = { scale: 'day', step: 1 };
+        tlOptions.zoomMin  = 1000 * 60 * 60 * 24;
+    } else if (viewMode === 'week') {
+        tlOptions.timeAxis = { scale: 'hour', step: 6 };
+    }
+    var timeline = new vis.Timeline(container, items, groupSet, tlOptions);
 
     // Open show modal on click
     timeline.on('click', function (props) {

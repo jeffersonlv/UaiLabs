@@ -20,7 +20,6 @@ use App\Http\Controllers\Admin\ModulePermissionController;
 use App\Http\Controllers\Admin\SupportRequestAdminController;
 use App\Http\Controllers\Admin\UnitController as AdminUnitController;
 use App\Http\Controllers\Admin\UserAdminController;
-use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active'])->group(function () {
@@ -147,5 +146,13 @@ Route::middleware(['auth', 'active'])->group(function () {
 Route::get('/clock', [ClockController::class, 'show'])->name('clock.guest')->withoutMiddleware(['auth']);
 Route::post('/clock/guest', [ClockController::class, 'punch'])->name('clock.punch.guest')->withoutMiddleware(['auth']);
 Route::get('/clock/units', [ClockController::class, 'userUnits'])->name('clock.units')->withoutMiddleware(['auth']);
+
+// BUG-07: /inventory → redireciona para /estoque (módulo em desenvolvimento)
+Route::get('/inventory', fn() => redirect()->route('estoque.index'))
+    ->middleware(['auth', 'active', 'company.active']);
+
+// BUG-08: /superadmin → 403 consistente para não-superadmin (via middleware superadmin)
+Route::get('/superadmin', fn() => redirect()->route('admin.dashboard'))
+    ->middleware(['auth', 'active', 'superadmin']);
 
 require __DIR__.'/auth.php';

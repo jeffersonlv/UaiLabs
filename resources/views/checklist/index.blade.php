@@ -43,6 +43,7 @@
             <button type="button"
                     class="btn btn-sm btn-primary py-0 px-2 ms-auto bulk-btn"
                     style="font-size:.7rem;pointer-events:auto"
+                    data-bs-toggle="modal" data-bs-target="#bulkModal"
                     data-ids="{{ json_encode($pendingIds) }}"
                     data-count="{{ count($pendingIds) }}"
                     data-category="{{ $category }}">
@@ -118,7 +119,8 @@
                                     </div>
                                 @endforeach
                                 <button type="button" class="btn btn-link btn-sm p-0 text-muted history-btn"
-                                        style="font-size:.7rem" data-id="{{ $occ->id }}">
+                                        style="font-size:.7rem" data-id="{{ $occ->id }}"
+                                        data-bs-toggle="modal" data-bs-target="#historyModal">
                                     <i class="bi bi-clock-history"></i> ver histórico completo
                                 </button>
                             </div>
@@ -262,25 +264,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ── Bulk complete ──────────────────────────────────────────
+    // ── Bulk complete — Bootstrap 5 nativo via data-bs-toggle ─────
     var bulkIds = [];
-    var bulkModal = null;
 
-    document.querySelectorAll('.bulk-btn').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            bulkIds = JSON.parse(btn.dataset.ids);
-            document.getElementById('bulkCount').textContent = btn.dataset.count;
-            document.getElementById('bulkCategory').textContent = btn.dataset.category || '';
-            var icon = document.getElementById('bulkIcon');
-            if (icon) icon.className = 'bi bi-check2-all me-1';
-            var confirmBtn = document.getElementById('bulkConfirm');
-            confirmBtn.disabled = false;
-            document.getElementById('bulkSpinner').classList.add('d-none');
-            if (!bulkModal) bulkModal = new bootstrap.Modal(document.getElementById('bulkModal'));
-            bulkModal.show();
-        });
+    document.getElementById('bulkModal').addEventListener('show.bs.modal', function (e) {
+        var btn = e.relatedTarget;
+        if (!btn) return;
+        bulkIds = JSON.parse(btn.dataset.ids);
+        document.getElementById('bulkCount').textContent    = btn.dataset.count;
+        document.getElementById('bulkCategory').textContent = btn.dataset.category || '';
+        var icon = document.getElementById('bulkIcon');
+        if (icon) icon.className = 'bi bi-check2-all me-1';
+        document.getElementById('bulkConfirm').disabled = false;
+        document.getElementById('bulkSpinner').classList.add('d-none');
     });
 
     document.getElementById('bulkConfirm').addEventListener('click', function () {
@@ -301,28 +297,25 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(function () { spinner.classList.add('d-none'); });
     });
 
-    // ── Occurrence history modal ───────────────────────────────
-    var historyModal = null;
-    document.querySelectorAll('.history-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var id = btn.dataset.id;
-            document.getElementById('historyBody').innerHTML = '<div class="text-center py-3"><span class="spinner-border text-secondary"></span></div>';
-            if (!historyModal) historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
-            historyModal.show();
-            fetch('/checklist/' + id + '/history', {
-                headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json'}
-            })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                var actionMap = {complete:'Concluída',reopen:'Reaberta',complete_bulk:'Concluída (lote)',complete_overdue:'Concluída (atrasada)'};
-                var rows = data.logs.map(function (l) {
-                    return '<tr><td>' + (actionMap[l.action] || l.action) + '</td><td>' + (l.user || '—') + '</td><td>' + (l.done_at || '—') + '</td><td class="text-muted">' + (l.justification || '') + '</td></tr>';
-                }).join('');
-                document.getElementById('historyTitle').textContent = data.activity;
-                document.getElementById('historyBody').innerHTML = rows
-                    ? '<table class="table table-sm"><thead><tr><th>Ação</th><th>Usuário</th><th>Hora</th><th>Justificativa</th></tr></thead><tbody>' + rows + '</tbody></table>'
-                    : '<p class="text-muted">Sem histórico registrado.</p>';
-            });
+    // ── Occurrence history — Bootstrap 5 nativo via data-bs-toggle ─
+    document.getElementById('historyModal').addEventListener('show.bs.modal', function (e) {
+        var btn = e.relatedTarget;
+        if (!btn) return;
+        var id = btn.dataset.id;
+        document.getElementById('historyBody').innerHTML = '<div class="text-center py-3"><span class="spinner-border text-secondary"></span></div>';
+        fetch('/checklist/' + id + '/history', {
+            headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json'}
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var actionMap = {complete:'Concluída',reopen:'Reaberta',complete_bulk:'Concluída (lote)',complete_overdue:'Concluída (atrasada)'};
+            var rows = data.logs.map(function (l) {
+                return '<tr><td>' + (actionMap[l.action] || l.action) + '</td><td>' + (l.user || '—') + '</td><td>' + (l.done_at || '—') + '</td><td class="text-muted">' + (l.justification || '') + '</td></tr>';
+            }).join('');
+            document.getElementById('historyTitle').textContent = data.activity;
+            document.getElementById('historyBody').innerHTML = rows
+                ? '<table class="table table-sm"><thead><tr><th>Ação</th><th>Usuário</th><th>Hora</th><th>Justificativa</th></tr></thead><tbody>' + rows + '</tbody></table>'
+                : '<p class="text-muted">Sem histórico registrado.</p>';
         });
     });
 
