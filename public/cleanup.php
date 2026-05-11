@@ -52,14 +52,14 @@ th{color:#94a3b8;font-size:.8rem}tr:hover td{background:#334155}
 </div>
 
 <?php if ($run):
-    // Apaga occurrences ligadas às atividades
-    $actIds = DB::table('activities')->where('category_id', '!=', $keep)->pluck('id');
-    DB::table('task_occurrence_logs')->whereIn('occurrence_id',
-        DB::table('task_occurrences')->whereIn('activity_id', $actIds)->pluck('id')
-    )->delete();
-    DB::table('task_occurrences')->whereIn('activity_id', $actIds)->delete();
-    DB::table('activities')->where('category_id', '!=', $keep)->delete();
-    DB::table('subcategories')->whereNotIn('category_id', [$keep])->delete();
+    $actIds = DB::table('activities')->where('category_id', '!=', $keep)->pluck('id')->toArray();
+    if ($actIds) {
+        $occIds = DB::table('task_occurrences')->whereIn('activity_id', $actIds)->pluck('id')->toArray();
+        if ($occIds) DB::table('task_occurrence_logs')->whereIn('task_occurrence_id', $occIds)->delete();
+        DB::table('task_occurrences')->whereIn('activity_id', $actIds)->delete();
+        DB::table('activities')->whereIn('id', $actIds)->delete();
+    }
+    DB::table('subcategories')->where('category_id', '!=', $keep)->delete();
     DB::table('categories')->where('id', '!=', $keep)->delete();
     echo "<p class='ok fw-bold'>✅ Limpeza concluída.</p>";
 else: ?>
