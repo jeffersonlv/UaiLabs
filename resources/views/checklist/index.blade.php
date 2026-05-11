@@ -55,14 +55,38 @@
     <div id="{{ $catId }}" class="collapse show">
         @php
             $bySubcat = $catItems->groupBy(fn($o) => $o->activity->subcategory?->name ?? '');
-            $shownDoneDivider = false;
+            $subcatIdx = 0;
         @endphp
 
         @foreach($bySubcat as $subcatName => $subcatItems)
+        @php
+            $subcatIdx++;
+            $subcatColId = $catId . '-sub-' . $subcatIdx;
+            $subcatPendingIds = $subcatItems->whereIn('status', ['PENDING','OVERDUE'])->pluck('id')->toArray();
+        @endphp
             @if($subcatName)
-                <p class="text-muted mb-1 ms-1 sub-header" style="font-size:.7rem" data-sub="{{ $subcatName }}">— {{ $subcatName }}</p>
+                <div class="d-flex align-items-center gap-2 mb-1 ms-1">
+                    <button class="btn btn-sm btn-link p-0 text-muted accordion-toggle-btn"
+                            data-bs-toggle="collapse" data-bs-target="#{{ $subcatColId }}"
+                            aria-expanded="true">
+                        <i class="bi bi-chevron-down" style="font-size:.7rem"></i>
+                    </button>
+                    <span class="text-muted sub-header" style="font-size:.7rem" data-sub="{{ $subcatName }}">— {{ $subcatName }}</span>
+                    @if(count($subcatPendingIds))
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary py-0 px-2 ms-auto bulk-btn"
+                                style="font-size:.65rem"
+                                data-bs-toggle="modal" data-bs-target="#bulkModal"
+                                data-ids="{{ json_encode($subcatPendingIds) }}"
+                                data-count="{{ count($subcatPendingIds) }}"
+                                data-category="{{ $subcatName }}">
+                            <i class="bi bi-check2-all me-1"></i>Marcar todos ({{ count($subcatPendingIds) }})
+                        </button>
+                    @endif
+                </div>
             @endif
 
+            <div id="{{ $subcatColId }}" class="collapse show">
             <div class="card border-0 shadow-sm mb-2">
                 @php $shownDoneDivider = false; @endphp
                 @foreach($subcatItems as $occ)
@@ -167,6 +191,7 @@
                 </div>
                 @endforeach
             </div>
+            </div>{{-- /collapse subcategoria --}}
         @endforeach
     </div>
 </div>
@@ -305,6 +330,10 @@
 
 /* Row highlight while dragging */
 .stc-row.stc-active { background: #fffbeb !important; }
+
+/* Accordion chevron rotation */
+.accordion-toggle-btn i { transition: transform .2s ease; }
+.accordion-toggle-btn i.rotated { transform: rotate(-90deg); }
 
 /* ── Chip flutuante de categoria ────────────────────────────────── */
 #floatingCat {
@@ -508,9 +537,23 @@ document.addEventListener('DOMContentLoaded', function () {
     try { stored = JSON.parse(localStorage.getItem(storeKey) || '{}'); } catch(e) {}
 
     document.querySelectorAll('.collapse').forEach(function (el) {
-        if (stored[el.id] === false) { el.classList.remove('show'); }
-        el.addEventListener('hidden.bs.collapse', function () { stored[el.id] = false; localStorage.setItem(storeKey, JSON.stringify(stored)); });
-        el.addEventListener('shown.bs.collapse',  function () { delete stored[el.id]; localStorage.setItem(storeKey, JSON.stringify(stored)); });
+        if (stored[el.id] === false) {
+            el.classList.remove('show');
+            var btn = document.querySelector('[data-bs-target="#' + el.id + '"]');
+            if (btn) btn.querySelector('i')?.classList.add('rotated');
+        }
+        el.addEventListener('hidden.bs.collapse', function () {
+            stored[el.id] = false;
+            localStorage.setItem(storeKey, JSON.stringify(stored));
+            var btn = document.querySelector('[data-bs-target="#' + el.id + '"]');
+            if (btn) btn.querySelector('i')?.classList.add('rotated');
+        });
+        el.addEventListener('shown.bs.collapse', function () {
+            delete stored[el.id];
+            localStorage.setItem(storeKey, JSON.stringify(stored));
+            var btn = document.querySelector('[data-bs-target="#' + el.id + '"]');
+            if (btn) btn.querySelector('i')?.classList.remove('rotated');
+        });
     });
 });
 </script>
