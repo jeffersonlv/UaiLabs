@@ -101,7 +101,7 @@
 @push('scripts')
 <script>
 const unitsByCompany = @json($unitsByCompany);
-const selectedIds    = @json($user->exists ? $user->units->pluck('id') : collect());
+const selectedIds    = (@json($user->exists ? $user->units->pluck('id') : collect())).map(Number);
 const typeLabels     = { matriz: 'Matriz', filial: 'Filial', quiosque: 'Quiosque', dark_kitchen: 'Dark Kitchen' };
 
 function updateUnits() {
@@ -120,7 +120,7 @@ function updateUnits() {
         <div class="form-check">
             <input class="form-check-input" type="checkbox" name="unit_ids[]"
                    id="unit-${u.id}" value="${u.id}"
-                   ${selectedIds.includes(u.id) ? 'checked' : ''}>
+                   ${selectedIds.includes(Number(u.id)) ? 'checked' : ''}>
             <label class="form-check-label" for="unit-${u.id}">
                 ${u.name}
                 <span class="badge bg-secondary ms-1" style="font-size:.7rem">${typeLabels[u.type] ?? u.type}</span>

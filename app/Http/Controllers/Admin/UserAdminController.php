@@ -53,6 +53,7 @@ class UserAdminController extends Controller
     {
         $companies      = Company::where('active', true)->orderBy('name')->get();
         $unitsByCompany = Unit::where('active', true)->orderBy('name')->get()->groupBy('company_id');
+        $user->load('units');
         return view('admin.users.form', compact('user', 'companies', 'unitsByCompany'));
     }
 
