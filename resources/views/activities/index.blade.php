@@ -43,8 +43,7 @@
             <tr>
                 <th>Título</th>
                 @if($companies)<th>Empresa</th>@endif
-                <th>Categoria</th>
-                <th>Subcategoria</th>
+                <th>Categoria / Subcategoria</th>
                 <th>Unidade(s)</th>
                 <th>Periodicidade</th>
                 <th class="text-center">Seq.</th>
@@ -57,8 +56,12 @@
             <tr>
                 <td class="fw-medium">{{ $act->title }}</td>
                 @if($companies)<td class="text-muted small">{{ $act->company?->name ?? '—' }}</td>@endif
-                <td>{{ $act->category->name ?? '—' }}</td>
-                <td class="text-muted small">{{ $act->subcategory?->name ?? '—' }}</td>
+                <td>
+                    <span class="fw-medium">{{ $act->category->name ?? '—' }}</span>
+                    @if($act->subcategory)
+                        <br><span class="text-muted" style="font-size:.75rem">{{ $act->subcategory->name }}</span>
+                    @endif
+                </td>
                 <td>
                     @if($act->units->isEmpty())
                         <span class="text-muted small fst-italic">Geral</span>
@@ -97,7 +100,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="{{ $companies ? 9 : 8 }}" class="text-muted text-center py-3">Nenhuma atividade encontrada.</td></tr>
+            <tr><td colspan="{{ $companies ? 8 : 7 }}" class="text-muted text-center py-3">Nenhuma atividade encontrada.</td></tr>
             @endforelse
         </tbody>
     </table>
