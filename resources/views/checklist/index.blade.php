@@ -83,14 +83,21 @@
                         <small class="text-success fw-semibold"><i class="bi bi-check2-all me-1"></i>Concluídas</small>
                     </div>
                 @endif
-                <div class="d-flex align-items-start gap-3 p-3 {{ !$loop->last ? 'border-bottom' : '' }}"
-                     style="border-left: 4px solid {{ $borderColor }}">
+                <div class="d-flex align-items-start gap-3 p-3 stc-row {{ !$loop->last ? 'border-bottom' : '' }}"
+                     style="border-left: 4px solid {{ $borderColor }};transition:background .15s">
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                             @if($act->sequence_required)
                                 <span class="badge text-white" style="background:#6f42c1!important">Seq.{{ $act->sequence_order }}</span>
                             @endif
-                            <span class="fw-medium {{ $done ? 'text-decoration-line-through text-muted' : '' }}">{{ $act->title }}</span>
+                            <span class="act-title fw-medium {{ $done ? 'text-decoration-line-through text-muted' : '' }}"
+                                  style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;max-width:100%"
+                                  title="{{ $act->title }}">{{ $act->title }}</span>
+                            @if(mb_strlen($act->title) > 40)
+                                <i class="bi bi-info-circle text-muted" style="font-size:.75rem;flex-shrink:0;cursor:default"
+                                   title="{{ $act->title }}"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"></i>
+                            @endif
                             @if($isGeral)
                                 <span class="badge bg-light text-muted border" style="font-size:.65rem;font-weight:400">Geral</span>
                             @else
@@ -128,10 +135,6 @@
                     </div>
 
                     <div class="d-flex flex-column align-items-end gap-2" style="min-width:164px">
-                        <span class="badge bg-{{ $statusColors[$occ->status] ?? 'secondary' }} {{ $occ->status === 'PENDING' ? 'text-dark' : '' }}">
-                            {{ $statusLabels[$occ->status] ?? $occ->status }}
-                        </span>
-
                         @if($done)
                             <div class="stc stc-done">
                                 <div class="stc-track">
@@ -300,6 +303,9 @@
     justify-content: center !important;
 }
 
+/* Row highlight while dragging */
+.stc-row.stc-active { background: #fffbeb !important; }
+
 /* ── Chip flutuante de categoria ────────────────────────────────── */
 #floatingCat {
     position: fixed;
@@ -336,17 +342,19 @@ document.addEventListener('DOMContentLoaded', function () {
         var handle = widget.querySelector('.stc-handle');
         var label = widget.querySelector('.stc-label');
         var form = widget.closest('form');
+        var row = widget.closest('.stc-row');
         var dragging = false, startCX = 0, currentX = 0;
         function maxX() { return track.offsetWidth - handle.offsetWidth - 8; }
         function cx(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
         function setPos(x, anim) { handle.style.transition = anim ? 'left .2s ease' : 'none'; handle.style.left = (4 + x) + 'px'; label.style.opacity = Math.max(0, 1 - x / maxX()); }
-        track.addEventListener('mousedown', function (e) { if (widget.classList.contains('stc-submitting')) return; dragging = true; startCX = cx(e) - currentX; e.preventDefault(); });
-        track.addEventListener('touchstart', function (e) { if (widget.classList.contains('stc-submitting')) return; dragging = true; startCX = cx(e) - currentX; e.preventDefault(); }, {passive:false});
+        track.addEventListener('mousedown', function (e) { if (widget.classList.contains('stc-submitting')) return; dragging = true; startCX = cx(e) - currentX; if (row) row.classList.add('stc-active'); e.preventDefault(); });
+        track.addEventListener('touchstart', function (e) { if (widget.classList.contains('stc-submitting')) return; dragging = true; startCX = cx(e) - currentX; if (row) row.classList.add('stc-active'); e.preventDefault(); }, {passive:false});
         document.addEventListener('mousemove', function (e) { if (!dragging) return; currentX = Math.max(0, Math.min(cx(e) - startCX, maxX())); setPos(currentX, false); e.preventDefault(); });
         document.addEventListener('touchmove', function (e) { if (!dragging) return; currentX = Math.max(0, Math.min(cx(e) - startCX, maxX())); setPos(currentX, false); e.preventDefault(); }, {passive:false});
         function onEnd() {
             if (!dragging) return;
             dragging = false;
+            if (row) row.classList.remove('stc-active');
             if (currentX >= maxX() * 0.82) {
                 currentX = maxX();
                 setPos(currentX, true);
@@ -386,6 +394,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     window.addEventListener('scroll', updateChip, { passive: true });
     updateChip();
+
+    // ── Tooltips ───────────────────────────────────────────────
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el);
+    });
 
     // ── Reexecutar toggle ──────────────────────────────────────
     document.querySelectorAll('.reexec-toggle').forEach(function (btn) {
