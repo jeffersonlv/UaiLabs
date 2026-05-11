@@ -89,6 +89,7 @@ foreach ($data as $subcatName => $activities) {
 
     if ($run) {
         $subcat = Subcategory::create([
+            'company_id'  => $category->company_id,
             'category_id' => $category->id,
             'name'        => $subcatName,
             'order'       => $order,
