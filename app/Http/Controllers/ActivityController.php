@@ -42,7 +42,9 @@ class ActivityController extends Controller
                 ->withQueryString();
         }
 
-        return view('activities.index', compact('activities', 'search', 'companies', 'selectedCompanyId'));
+        $units = $user->isSuperAdmin() ? collect() : Unit::where('company_id', $this->companyId())->where('active', true)->orderBy('name')->get();
+
+        return view('activities.index', compact('activities', 'search', 'companies', 'selectedCompanyId', 'units'));
     }
 
     public function create()
@@ -166,6 +168,17 @@ class ActivityController extends Controller
         }
 
         return response()->json(['saved' => $saved, 'errors' => $errors]);
+    }
+
+    public function assignUnits(Request $request, Activity $activity)
+    {
+        abort_if($activity->company_id !== $this->companyId(), 403);
+        $request->validate(['unit_ids' => 'nullable|array', 'unit_ids.*' => 'exists:units,id']);
+
+        $activity->units()->sync($request->input('unit_ids', []));
+        AuditLogger::crud('activity.units_updated', 'activity', $activity->id, $activity->title);
+
+        return response()->json(['ok' => true, 'units' => $activity->units()->pluck('name')]);
     }
 
     private function syncUnits(Activity $activity, Request $request): void

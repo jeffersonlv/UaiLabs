@@ -42,7 +42,8 @@
                 </div>
             </div>
 
-            {{-- N:N Unit assignment --}}
+            {{-- N:N Unit assignment — só exibido se 2+ unidades --}}
+            @if($units->count() >= 2)
             <div class="mb-3">
                 <label class="form-label fw-semibold">Unidades</label>
                 <div class="form-check mb-1">
@@ -71,6 +72,7 @@
                     @endif
                 </div>
             </div>
+            @endif
 
             <div class="mb-3">
                 <label class="form-label">Periodicidade <span class="text-danger">*</span></label>

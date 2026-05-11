@@ -49,6 +49,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
                 Route::get('activities/spreadsheet', [ActivityController::class, 'spreadsheet'])->name('activities.spreadsheet');
                 Route::post('activities/bulk-save', [ActivityController::class, 'bulkSave'])->name('activities.bulk-save');
+                Route::patch('activities/{activity}/assign-units', [ActivityController::class, 'assignUnits'])->name('activities.assign-units');
                 Route::resource('activities', ActivityController::class);
             });
         });

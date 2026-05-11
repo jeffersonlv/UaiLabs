@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('content')
+@php $multiUnit = !$companies && $units->count() >= 2; @endphp
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">Atividades</h4>
     @if(!auth()->user()->isSuperAdmin())
@@ -44,7 +45,7 @@
                 <th>Título</th>
                 @if($companies)<th>Empresa</th>@endif
                 <th>Categoria / Subcategoria</th>
-                <th>Unidade(s)</th>
+                @if($multiUnit)<th>Unidade(s)</th>@endif
                 <th>Periodicidade</th>
                 <th class="text-center">Seq.</th>
                 <th class="text-center">Status</th>
@@ -62,17 +63,53 @@
                         <br><span class="text-muted" style="font-size:.75rem">{{ $act->subcategory->name }}</span>
                     @endif
                 </td>
+                @if($multiUnit)
                 <td>
-                    @if($act->units->isEmpty())
-                        <span class="text-muted small fst-italic">Geral</span>
-                    @else
-                        @foreach($act->units as $unit)
-                            <span class="badge bg-light text-secondary border me-1" style="font-size:.65rem">
-                                {{ $unit->name }}
-                            </span>
-                        @endforeach
-                    @endif
+                    {{-- Badges com unidades atuais --}}
+                    <div class="unit-badges mb-1" data-id="{{ $act->id }}">
+                        @if($act->units->isEmpty())
+                            <span class="badge bg-secondary" style="font-size:.65rem">Geral</span>
+                        @else
+                            @foreach($act->units as $unit)
+                                <span class="badge bg-light text-secondary border me-1" style="font-size:.65rem">{{ $unit->name }}</span>
+                            @endforeach
+                        @endif
+                    </div>
+                    {{-- Botões de ação --}}
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button type="button"
+                                class="btn btn-xs btn-outline-secondary assign-geral"
+                                style="font-size:.7rem;padding:.1rem .45rem"
+                                data-id="{{ $act->id }}"
+                                data-url="{{ route('activities.assign-units', $act) }}">
+                            Geral
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-xs btn-outline-primary dropdown-toggle"
+                                    style="font-size:.7rem;padding:.1rem .45rem"
+                                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Unidades
+                            </button>
+                            <div class="dropdown-menu p-2" style="min-width:180px"
+                                 data-id="{{ $act->id }}"
+                                 data-url="{{ route('activities.assign-units', $act) }}">
+                                @foreach($units as $unit)
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input unit-chk"
+                                           id="u_{{ $act->id }}_{{ $unit->id }}"
+                                           value="{{ $unit->id }}"
+                                           {{ $act->units->contains($unit->id) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="u_{{ $act->id }}_{{ $unit->id }}" style="font-size:.8rem">
+                                        {{ $unit->name }}
+                                    </label>
+                                </div>
+                                @endforeach
+                                <button type="button" class="btn btn-sm btn-primary w-100 mt-2 save-units">Salvar</button>
+                            </div>
+                        </div>
+                    </div>
                 </td>
+                @endif
                 <td class="text-capitalize">{{ $act->periodicity }}</td>
                 <td class="text-center small">{{ $act->sequence_required ? $act->sequence_order : '—' }}</td>
                 <td class="text-center">
@@ -100,7 +137,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="{{ $companies ? 8 : 7 }}" class="text-muted text-center py-3">Nenhuma atividade encontrada.</td></tr>
+            <tr><td colspan="{{ $companies ? ($multiUnit ? 9 : 8) : ($multiUnit ? 8 : 7) }}" class="text-muted text-center py-3">Nenhuma atividade encontrada.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -111,4 +148,68 @@
     </div>
     @endif
 </div>
+
+@if($multiUnit)
+@push('scripts')
+<script>
+var csrf = '{{ csrf_token() }}';
+
+function updateBadges(actId, units) {
+    var el = document.querySelector('.unit-badges[data-id="' + actId + '"]');
+    if (!el) return;
+    if (!units || units.length === 0) {
+        el.innerHTML = '<span class="badge bg-secondary" style="font-size:.65rem">Geral</span>';
+    } else {
+        el.innerHTML = units.map(function (n) {
+            return '<span class="badge bg-light text-secondary border me-1" style="font-size:.65rem">' + n + '</span>';
+        }).join('');
+    }
+}
+
+// Botão Geral
+document.querySelectorAll('.assign-geral').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var id = btn.dataset.id;
+        var url = btn.dataset.url;
+        btn.disabled = true;
+        fetch(url, {
+            method: 'PATCH',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ unit_ids: [] })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            updateBadges(id, data.units);
+            // desmarcar todos os checkboxes deste dropdown
+            document.querySelectorAll('.unit-chk[id^="u_' + id + '_"]').forEach(function (c) { c.checked = false; });
+        })
+        .finally(function () { btn.disabled = false; });
+    });
+});
+
+// Botão Salvar dentro do dropdown
+document.querySelectorAll('.save-units').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var menu = btn.closest('.dropdown-menu');
+        var id   = menu.dataset.id;
+        var url  = menu.dataset.url;
+        var ids  = Array.from(menu.querySelectorAll('.unit-chk:checked')).map(function (c) { return parseInt(c.value); });
+        btn.disabled = true;
+        fetch(url, {
+            method: 'PATCH',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ unit_ids: ids })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            updateBadges(id, data.units);
+            bootstrap.Dropdown.getInstance(menu.previousElementSibling)?.hide();
+        })
+        .finally(function () { btn.disabled = false; });
+    });
+});
+</script>
+@endpush
+@endif
 @endsection
