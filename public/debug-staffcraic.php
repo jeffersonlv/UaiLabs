@@ -35,7 +35,8 @@ $occs = DB::table('task_occurrences')
     ->whereDate('period_start', $today)
     ->get();
 echo "Total: " . count($occs) . "\n";
-$unitIds = array_unique(array_column((array)$occs, 'unit_id'));
+$occArr = json_decode(json_encode($occs), true);
+$unitIds = array_unique(array_column($occArr, 'unit_id'));
 echo "unit_ids distintos: " . implode(', ', array_map(fn($v) => $v ?? 'NULL', $unitIds)) . "\n\n";
 
 echo "=== ATIVIDADES ATIVAS DA EMPRESA ===\n";
@@ -50,9 +51,9 @@ echo "\n=== DIAGNÓSTICO ===\n";
 if (empty($userUnits)) {
     echo "❌ User não tem unidades em user_units — visibleUnitIds() retorna [] — whereIn vazio — sem tarefas.\n";
 } else {
-    $occUnitIds = array_filter(array_unique(array_column((array)$occs, 'unit_id')));
+    $occUnitIds = array_filter(array_unique(array_column($occArr, 'unit_id')));
     $match = array_intersect($userUnits, $occUnitIds);
-    if (empty($match) && !in_array(null, array_column((array)$occs, 'unit_id'))) {
+    if (empty($match) && !in_array(null, array_column($occArr, 'unit_id'))) {
         echo "❌ As unidades do user (" . implode(',', $userUnits) . ") não batem com as unit_ids das occurrences (" . implode(',', $occUnitIds) . ").\n";
     } elseif (count($occs) === 0) {
         echo "❌ Nenhuma occurrence gerada hoje. Verifique se há atividades 'diario' ativas.\n";
