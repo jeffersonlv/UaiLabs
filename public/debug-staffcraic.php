@@ -41,7 +41,7 @@ $st->execute([$user->company_id]);
 $acts = $st->fetchAll(PDO::FETCH_OBJ);
 $out .= "ACTIVITIES=" . count($acts) . "\n";
 foreach ($acts as $a) {
-    $st2 = $pdo->prepare("SELECT unit_id FROM activity_unit WHERE activity_id=?");
+    $st2 = $pdo->prepare("SELECT unit_id FROM activity_units WHERE activity_id=?");
     $st2->execute([$a->id]);
     $au = $st2->fetchAll(PDO::FETCH_COLUMN);
     $out .= "  act={$a->id} period={$a->periodicity} units=[" . (count($au) ? implode(',', $au) : 'Geral') . "] {$a->title}\n";
