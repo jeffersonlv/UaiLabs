@@ -28,7 +28,9 @@ class TaskOccurrenceController extends Controller
         $occurrences = TaskOccurrence::with(['activity.category', 'activity.subcategory', 'activity.units', 'completedBy', 'logs.user'])
             ->where('company_id', $user->company_id)
             ->whereDate('period_start', $today)
-            ->when($unitIds !== null, fn($q) => $q->whereIn('unit_id', $unitIds))
+            ->when($unitIds !== null, fn($q) => $q->where(fn($q2) =>
+                $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')
+            ))
             ->get()
             ->sortBy(fn($o) => [
                 $o->unit?->name ?? ($o->activity->units->first()?->name ?? 'ZZZ'),
@@ -105,7 +107,9 @@ class TaskOccurrenceController extends Controller
             ->where('company_id', $user->company_id)
             ->whereDate('period_start', $today)
             ->whereIn('status', ['PENDING', 'OVERDUE'])
-            ->when($unitIds !== null, fn($q) => $q->whereIn('unit_id', $unitIds))
+            ->when($unitIds !== null, fn($q) => $q->where(fn($q2) =>
+                $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')
+            ))
             ->get();
 
         foreach ($occurrences as $occurrence) {
