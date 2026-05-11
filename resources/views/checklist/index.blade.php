@@ -60,7 +60,7 @@
 
         @foreach($bySubcat as $subcatName => $subcatItems)
             @if($subcatName)
-                <p class="text-muted mb-1 ms-1" style="font-size:.7rem">— {{ $subcatName }}</p>
+                <p class="text-muted mb-1 ms-1 sub-header" style="font-size:.7rem" data-sub="{{ $subcatName }}">— {{ $subcatName }}</p>
             @endif
 
             <div class="card border-0 shadow-sm mb-2">
@@ -366,13 +366,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── Chip flutuante de categoria ────────────────────────────
     var chip = document.getElementById('floatingCat');
     var catHeaders = document.querySelectorAll('.cat-header');
+    var subHeaders = document.querySelectorAll('.sub-header');
     function updateChip() {
-        var current = null;
+        var currentCat = null, currentSub = null;
         catHeaders.forEach(function (h) {
-            if (h.getBoundingClientRect().top < 72) current = h;
+            if (h.getBoundingClientRect().top < 72) currentCat = h;
         });
-        if (current) {
-            chip.textContent = current.dataset.cat;
+        subHeaders.forEach(function (h) {
+            if (h.getBoundingClientRect().top < 72) currentSub = h;
+        });
+        if (currentCat) {
+            chip.textContent = currentSub
+                ? currentCat.dataset.cat + ' · ' + currentSub.dataset.sub
+                : currentCat.dataset.cat;
             chip.classList.add('visible');
         } else {
             chip.classList.remove('visible');
