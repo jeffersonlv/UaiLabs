@@ -59,9 +59,39 @@ class UnitController extends Controller
     public function destroy(Company $company, Unit $unit)
     {
         abort_if($unit->company_id !== $company->id, 403);
-        if ($unit->users()->exists()) {
-            return back()->with('error', 'Não é possível excluir uma unidade com usuários vinculados.');
+
+        $blocks = [];
+
+        $userCount = $unit->users()->count();
+        if ($userCount) {
+            $blocks[] = "{$userCount} usuário(s) atribuído(s) — remova em Usuários → Editar";
         }
+
+        $activityCount = $unit->activities()->count();
+        if ($activityCount) {
+            $blocks[] = "{$activityCount} atividade(s) vinculada(s) — remova em Atividades → Unidades";
+        }
+
+        $occurrenceCount = \App\Models\TaskOccurrence::where('unit_id', $unit->id)->count();
+        if ($occurrenceCount) {
+            $blocks[] = "{$occurrenceCount} ocorrência(s) de tarefas registradas";
+        }
+
+        $timeCount = \App\Models\TimeEntry::where('unit_id', $unit->id)->count();
+        if ($timeCount) {
+            $blocks[] = "{$timeCount} registro(s) de ponto vinculados";
+        }
+
+        $shiftCount = \App\Models\Shift::where('unit_id', $unit->id)->count();
+        if ($shiftCount) {
+            $blocks[] = "{$shiftCount} turno(s) de escala vinculados";
+        }
+
+        if ($blocks) {
+            $msg = 'Não é possível excluir "' . $unit->name . '". Vínculos pendentes: ' . implode('; ', $blocks) . '.';
+            return back()->with('error', $msg);
+        }
+
         AuditLogger::crud('unit.deleted', 'unit', $unit->id, $unit->name);
         $unit->delete();
         return redirect()->route('admin.units.index', $company)->with('success', 'Unidade excluída.');
