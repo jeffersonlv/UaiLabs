@@ -33,6 +33,10 @@ class ClockController extends Controller
             ->orderByDesc('recorded_at')
             ->first();
 
+        if ($last && Carbon::parse($last->recorded_at)->diffInSeconds(now()) < 60) {
+            return response()->json(['error' => 'Aguarde um momento antes de registrar novamente.'], 422);
+        }
+
         $type = (! $last || $last->type === 'clock_out') ? 'clock_in' : 'clock_out';
 
         $entry = TimeEntry::create([

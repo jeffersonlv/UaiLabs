@@ -35,7 +35,7 @@ class TimeEntryController extends Controller
         $users = $usersQuery->get();
 
         $entries = TimeEntry::with('user', 'unit')
-            ->when($unitIds !== null, fn($q) => $q->whereIn('unit_id', $unitIds))
+            ->when($unitIds !== null, fn($q) => $q->where(fn($q2) => $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')))
             ->when($unitId, fn($q) => $q->where('unit_id', $unitId))
             ->when($userId, fn($q) => $q->where('user_id', $userId))
             ->whereBetween('recorded_at', [
@@ -125,7 +125,7 @@ class TimeEntryController extends Controller
 
         $corrections = TimeEntry::with('user', 'unit', 'originalEntry')
             ->where('type', 'correction')
-            ->when($unitIds !== null, fn($q) => $q->whereIn('unit_id', $unitIds))
+            ->when($unitIds !== null, fn($q) => $q->where(fn($q2) => $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')))
             ->orderByDesc('recorded_at')
             ->paginate(30);
 
