@@ -114,14 +114,14 @@
                 <span id="sdmType" class="badge mb-1"></span>
                 <div class="text-muted small" id="sdmNotes"></div>
             </div>
-            <div class="modal-footer py-2 gap-2">
-                <a id="sdmEdit" href="#" class="btn btn-sm btn-outline-primary">
+            <div class="modal-footer py-2 d-flex flex-column gap-2 align-items-stretch">
+                <a id="sdmEdit" href="#" class="btn btn-sm btn-outline-primary w-100">
                     <i class="bi bi-pencil me-1"></i>Editar
                 </a>
-                <button id="sdmDelete" class="btn btn-sm btn-outline-danger" data-url="" data-name="">
-                    <i class="bi bi-trash me-1"></i>Excluir
+                <button id="sdmDelete" type="button" class="btn btn-sm btn-outline-danger w-100" data-url="" data-name="">
+                    <i class="bi bi-trash me-1"></i>Excluir turno
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>
@@ -199,6 +199,7 @@
         document.getElementById('sdmDelete').dataset.url  = s.delete_url;
         document.getElementById('sdmDelete').dataset.name = s.user;
         bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftDetailModal')).show();
+
     });
 
     // Add shift form submit

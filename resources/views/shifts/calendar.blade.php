@@ -79,17 +79,17 @@
             </div>
             <div class="modal-body py-2">
                 <div class="small fw-semibold mb-1" id="sdmTime"></div>
-                <span id="sdmType" class="badge mb-1"></span>
+                <span id="sdmType" class="badge mb-2"></span>
                 <div class="text-muted small" id="sdmNotes"></div>
             </div>
-            <div class="modal-footer py-2 gap-2">
-                <a id="sdmEdit" href="#" class="btn btn-sm btn-outline-primary">
+            <div class="modal-footer py-2 d-flex flex-column gap-2 align-items-stretch">
+                <a id="sdmEdit" href="#" class="btn btn-sm btn-outline-primary w-100">
                     <i class="bi bi-pencil me-1"></i>Editar
                 </a>
-                <button id="sdmDelete" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-trash me-1"></i>Excluir
+                <button id="sdmDelete" type="button" class="btn btn-sm btn-outline-danger w-100">
+                    <i class="bi bi-trash me-1"></i>Excluir turno
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>
@@ -98,8 +98,8 @@
 @push('scripts')
 <script>
 (function () {
-    var csrf = document.querySelector('meta[name=csrf-token]').content;
-    var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftDetailModal'));
+    var csrf    = document.querySelector('meta[name=csrf-token]').content;
+    var modalEl = document.getElementById('shiftDetailModal');
 
     document.querySelectorAll('.cal-badge').forEach(function (badge) {
         badge.addEventListener('click', function () {
@@ -111,7 +111,7 @@
             document.getElementById('sdmEdit').href         = badge.dataset.edit;
             document.getElementById('sdmDelete').dataset.url  = badge.dataset.delete;
             document.getElementById('sdmDelete').dataset.name = badge.dataset.name;
-            modal.show();
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
         });
     });
 
