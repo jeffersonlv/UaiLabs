@@ -69,6 +69,10 @@
     </div>
 </div>
 
+{{-- Trigger hidden para data-API do Bootstrap (não depende de window.bootstrap) --}}
+<button id="sdmTrigger" type="button" class="d-none"
+        data-bs-toggle="modal" data-bs-target="#shiftDetailModal"></button>
+
 {{-- Modal: Detalhe do turno --}}
 <div class="modal fade" id="shiftDetailModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
@@ -111,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('sdmEdit').href         = badge.dataset.edit;
             document.getElementById('sdmDelete').dataset.url  = badge.dataset.delete;
             document.getElementById('sdmDelete').dataset.name = badge.dataset.name;
-            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            document.getElementById('sdmTrigger').click();
         });
     });
 

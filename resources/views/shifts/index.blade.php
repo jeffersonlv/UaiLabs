@@ -101,6 +101,10 @@
     </div>
 </div>
 
+{{-- Trigger hidden para data-API do Bootstrap --}}
+<button id="sdmTrigger" type="button" class="d-none"
+        data-bs-toggle="modal" data-bs-target="#shiftDetailModal"></button>
+
 {{-- Modal: Detalhe do turno (timeline) --}}
 <div class="modal fade" id="shiftDetailModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
@@ -198,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('sdmEdit').href         = s.edit_url;
         document.getElementById('sdmDelete').dataset.url  = s.delete_url;
         document.getElementById('sdmDelete').dataset.name = s.user;
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftDetailModal')).show();
+        document.getElementById('sdmTrigger').click();
 
     });
 
