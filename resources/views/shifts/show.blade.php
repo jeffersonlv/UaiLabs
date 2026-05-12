@@ -14,7 +14,7 @@
                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Excluir</button>
             </form>
         @endif
-        <a href="{{ route('shifts.index', ['unit_id' => $shift->unit_id]) }}"
+        <a href="{{ route('shifts.calendar', ['unit_id' => $shift->unit_id]) }}"
            class="btn btn-sm btn-outline-secondary">Voltar</a>
     </div>
 </div>

@@ -8,7 +8,7 @@
         <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newTemplateModal">
             <i class="bi bi-plus-lg me-1"></i>Novo template
         </button>
-        <a href="{{ route('shifts.index') }}" class="btn btn-sm btn-outline-secondary">Voltar</a>
+        <a href="{{ route('shifts.calendar') }}" class="btn btn-sm btn-outline-secondary">Voltar</a>
     </div>
 </div>
 

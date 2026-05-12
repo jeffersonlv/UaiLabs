@@ -27,8 +27,8 @@ class ModuleRegistry
                 'key'         => 'shifts',
                 'name'        => 'Escala de Funcionários',
                 'description' => 'Planejamento e visualização de escalas de trabalho',
-                'icon'        => 'bi-calendar-week',
-                'route'       => 'shifts.index',
+                'icon'        => 'bi-calendar-month',
+                'route'       => 'shifts.calendar',
                 'active'      => true,
             ],
             [
