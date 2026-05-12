@@ -7,7 +7,9 @@
         <a href="{{ route('shifts.calendar', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-calendar-month me-1"></i>Calendário
         </a>
+        @if(auth()->user()->isManagerOrAbove())
         <a href="{{ route('shifts.templates.index') }}" class="btn btn-outline-secondary btn-sm">Templates</a>
+        @endif
         @if(auth()->user()->isManagerOrAbove())
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#shiftModal">+ Turno</button>
         @endif

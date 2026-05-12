@@ -155,6 +155,7 @@ class ShiftController extends Controller
     /** Templates listing. */
     public function templates(Request $request)
     {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $user    = auth()->user();
         $unitIds = $user->visibleUnitIds();
 
@@ -169,6 +170,7 @@ class ShiftController extends Controller
 
     public function storeTemplate(Request $request)
     {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $request->validate([
             'unit_id' => 'required|exists:units,id',
             'name'    => 'required|string|max:100',
@@ -186,6 +188,7 @@ class ShiftController extends Controller
 
     public function applyTemplate(Request $request, ShiftTemplate $template)
     {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $request->validate([
             'start_date' => 'required|date',
             'conflict'   => 'in:skip,replace',
@@ -254,6 +257,7 @@ class ShiftController extends Controller
 
     public function updateTemplate(Request $request, ShiftTemplate $template)
     {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $this->authorizeUnit($template->unit_id);
         $request->validate([
             'name'   => 'required|string|max:100',
@@ -271,6 +275,7 @@ class ShiftController extends Controller
 
     public function destroyTemplate(ShiftTemplate $template)
     {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $this->authorizeUnit($template->unit_id);
         $template->delete();
         return back()->with('success', 'Template removido.');
