@@ -180,10 +180,19 @@ $days = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
                 </div>
                 <div class="modal-body">
                     <p class="small text-muted mb-2" id="applyDesc"></p>
-                    <label class="form-label form-label-sm">Início da semana <span class="text-danger">*</span></label>
-                    <input type="date" name="start_date" class="form-control form-control-sm" required
-                           value="{{ \Carbon\Carbon::today()->startOfWeek()->toDateString() }}">
-                    <div class="form-text">Deve ser uma segunda-feira para o template alinhar corretamente.</div>
+                    <div class="mb-3">
+                        <label class="form-label form-label-sm">Início da semana <span class="text-danger">*</span></label>
+                        <input type="date" name="start_date" class="form-control form-control-sm" required
+                               value="{{ \Carbon\Carbon::today()->startOfWeek()->toDateString() }}">
+                        <div class="form-text">Deve ser uma segunda-feira para o template alinhar corretamente.</div>
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm">Se já houver turno no mesmo dia</label>
+                        <select name="conflict" class="form-select form-select-sm">
+                            <option value="skip">Pular (manter o existente)</option>
+                            <option value="replace">Substituir (apagar e recriar)</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>

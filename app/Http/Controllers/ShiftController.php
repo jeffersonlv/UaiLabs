@@ -177,12 +177,16 @@ class ShiftController extends Controller
 
     public function applyTemplate(Request $request, ShiftTemplate $template)
     {
-        $request->validate(['start_date' => 'required|date']);
+        $request->validate([
+            'start_date' => 'required|date',
+            'conflict'   => 'in:skip,replace',
+        ]);
         $this->authorizeUnit($template->unit_id);
 
         $start     = Carbon::parse($request->start_date)->startOfDay();
         $companyId = auth()->user()->company_id;
-        $config    = $template->config; // array of ['day_of_week' => int, 'user_id' => int, 'start_time' => 'H:i', 'end_time' => 'H:i']
+        $config    = $template->config;
+        $conflict  = $request->input('conflict', 'skip');
 
         $weeks = match ($template->period) {
             'biweekly' => 2,
@@ -190,9 +194,30 @@ class ShiftController extends Controller
             default    => 1,
         };
 
+        $created = 0;
+        $skipped = 0;
+
         for ($w = 0; $w < $weeks; $w++) {
             foreach ($config as $entry) {
                 $day = $start->copy()->addWeeks($w)->startOfWeek()->addDays($entry['day_of_week']);
+
+                $existing = Shift::where('user_id', $entry['user_id'])
+                    ->where('unit_id', $template->unit_id)
+                    ->whereDate('start_at', $day->toDateString())
+                    ->exists();
+
+                if ($existing) {
+                    if ($conflict === 'replace') {
+                        Shift::where('user_id', $entry['user_id'])
+                            ->where('unit_id', $template->unit_id)
+                            ->whereDate('start_at', $day->toDateString())
+                            ->delete();
+                    } else {
+                        $skipped++;
+                        continue;
+                    }
+                }
+
                 Shift::create([
                     'company_id' => $companyId,
                     'unit_id'    => $template->unit_id,
@@ -202,10 +227,14 @@ class ShiftController extends Controller
                     'type'       => 'work',
                     'created_by' => auth()->id(),
                 ]);
+                $created++;
             }
         }
 
-        return back()->with('success', 'Template aplicado.');
+        $msg = "{$created} turno(s) criado(s)";
+        if ($skipped) $msg .= ", {$skipped} pulado(s) por conflito (já existiam)";
+
+        return back()->with('success', "Template aplicado: {$msg}.");
     }
 
     public function updateTemplate(Request $request, ShiftTemplate $template)
