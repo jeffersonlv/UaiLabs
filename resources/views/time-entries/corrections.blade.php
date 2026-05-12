@@ -8,13 +8,22 @@
 <div class="card border-0 shadow-sm">
     <table class="table table-hover mb-0">
         <thead class="table-light">
-            <tr><th>Funcionário</th><th>Unidade</th><th>Registrado em</th><th>Justificativa</th></tr>
+            <tr><th>Funcionário</th><th>Unidade</th><th>Tipo</th><th>Registrado em</th><th>Justificativa</th></tr>
         </thead>
         <tbody>
             @forelse($corrections as $e)
             <tr>
                 <td>{{ $e->user?->name }}</td>
-                <td>{{ $e->unit?->name }}</td>
+                <td>{{ $e->unit?->name ?? '—' }}</td>
+                <td>
+                    @if($e->type === 'clock_in')
+                        <span class="badge bg-success">Entrada</span>
+                    @elseif($e->type === 'clock_out')
+                        <span class="badge bg-primary">Saída</span>
+                    @else
+                        <span class="badge bg-secondary">{{ $e->type }}</span>
+                    @endif
+                </td>
                 <td>{{ $e->recorded_at->format('d/m/Y H:i') }}</td>
                 <td class="text-muted small">{{ $e->justification }}</td>
             </tr>
@@ -35,7 +44,6 @@
             <div class="modal-header"><h5 class="modal-title">Nova Correção</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
             <form method="POST" action="{{ route('time-entries.store') }}">
                 @csrf
-                <input type="hidden" name="type" value="correction">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Funcionário</label>
@@ -43,6 +51,13 @@
                             @foreach($users as $u)
                                 <option value="{{ $u->id }}">{{ $u->name }}</option>
                             @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de registro</label>
+                        <select name="type" class="form-select" required>
+                            <option value="clock_in">Entrada</option>
+                            <option value="clock_out">Saída</option>
                         </select>
                     </div>
                     <div class="mb-3">

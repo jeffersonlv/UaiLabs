@@ -13,10 +13,10 @@ class StoreTimeEntryRequest extends FormRequest
         return [
             'user_id'            => 'sometimes|exists:users,id',
             'unit_id'            => 'required|exists:units,id',
-            'type'               => 'required|in:clock_in,clock_out,correction',
+            'type'               => 'required|in:clock_in,clock_out',
             'recorded_at'        => 'required|date',
             'original_entry_id'  => 'nullable|exists:time_entries,id',
-            'justification'      => 'required_if:type,correction|nullable|string|min:5',
+            'justification'      => 'required|string|min:5',
         ];
     }
 }

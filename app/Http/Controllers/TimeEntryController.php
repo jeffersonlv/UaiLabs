@@ -28,7 +28,7 @@ class TimeEntryController extends Controller
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
 
-        $usersQuery = User::where('company_id', $user->company_id)->where('active', true)->orderBy('name');
+        $usersQuery = User::where('company_id', $user->company_id)->where('active', true)->where('role', '!=', 'superadmin')->orderBy('name');
         if ($unitId) {
             $usersQuery->whereHas('units', fn($q) => $q->where('units.id', $unitId));
         }
@@ -57,7 +57,6 @@ class TimeEntryController extends Controller
         $entry = TimeEntry::create($request->validated() + [
             'company_id' => $user->company_id,
             'user_id'    => $request->input('user_id', $user->id),
-            'type'       => 'correction',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -99,7 +98,7 @@ class TimeEntryController extends Controller
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
 
-        $usersQuery = User::where('company_id', $user->company_id)->where('active', true)->orderBy('name');
+        $usersQuery = User::where('company_id', $user->company_id)->where('active', true)->where('role', '!=', 'superadmin')->orderBy('name');
         if ($unitId) {
             $usersQuery->whereHas('units', fn($q) => $q->where('units.id', $unitId));
         } elseif ($unitIds !== null) {
@@ -124,7 +123,7 @@ class TimeEntryController extends Controller
         $unitIds = $user->visibleUnitIds();
 
         $corrections = TimeEntry::with('user', 'unit', 'originalEntry')
-            ->where('type', 'correction')
+            ->whereNotNull('justification')
             ->when($unitIds !== null, fn($q) => $q->where(fn($q2) => $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')))
             ->orderByDesc('recorded_at')
             ->paginate(30);
@@ -133,7 +132,7 @@ class TimeEntryController extends Controller
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
 
-        $users = User::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
+        $users = User::where('company_id', $user->company_id)->where('active', true)->where('role', '!=', 'superadmin')->orderBy('name')->get();
 
         return view('time-entries.corrections', compact('corrections', 'units', 'users'));
     }

@@ -29,6 +29,7 @@ class ClockController extends Controller
 
         $last = TimeEntry::where('user_id', $user->id)
             ->whereDate('recorded_at', Carbon::today())
+            ->where('recorded_at', '<=', now())
             ->where('type', '!=', 'correction')
             ->orderByDesc('recorded_at')
             ->first();
