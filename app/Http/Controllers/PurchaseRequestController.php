@@ -17,7 +17,9 @@ class PurchaseRequestController extends Controller
 
         $active = PurchaseRequest::with('user', 'unit')
             ->whereIn('status', ['requested', 'ordered'])
-            ->when($unitIds !== null, fn($q) => $q->whereIn('unit_id', $unitIds))
+            ->when($unitIds !== null, fn($q) => $q->where(fn($q2) =>
+                $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')
+            ))
             ->orderByDesc('created_at')
             ->get();
 
@@ -91,7 +93,9 @@ class PurchaseRequestController extends Controller
 
         $history = PurchaseRequest::with('user', 'unit', 'statusChangedBy')
             ->whereIn('status', ['purchased', 'cancelled'])
-            ->when($unitIds !== null, fn($q) => $q->whereIn('unit_id', $unitIds))
+            ->when($unitIds !== null, fn($q) => $q->where(fn($q2) =>
+                $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')
+            ))
             ->orderByDesc('status_changed_at')
             ->paginate(30);
 
@@ -103,7 +107,7 @@ class PurchaseRequestController extends Controller
         $user    = auth()->user();
         $unitIds = $user->visibleUnitIds();
         if ($unitIds !== null) {
-            abort_unless(in_array($pr->unit_id, $unitIds), 403);
+            abort_unless($pr->unit_id === null || in_array($pr->unit_id, $unitIds), 403);
         } else {
             abort_if($pr->company_id !== $user->company_id, 403);
         }
