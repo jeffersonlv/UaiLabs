@@ -341,6 +341,29 @@
 @endif
 @endif
 
+{{-- ── Compras ativas (manager+) ───────────────────────────── --}}
+@if($purchaseStats !== null)
+<h6 class="mb-3">
+    Compras pendentes
+    <a href="{{ route('purchase-requests.index') }}" class="text-muted fw-normal small ms-1">ver todas &rarr;</a>
+</h6>
+<div class="row g-3 mb-4">
+    @foreach(\App\Models\PurchaseRequest::STATUSES as $status => $meta)
+        @if(in_array($status, \App\Models\PurchaseRequest::ACTIVE_STATUSES))
+        <div class="col-6 col-sm-4">
+            <a href="{{ route('purchase-requests.index') }}"
+               class="card border-0 bg-{{ $meta['color'] }} bg-opacity-10 text-decoration-none">
+                <div class="card-body py-3">
+                    <div class="text-muted small">{{ $meta['label'] }}</div>
+                    <div class="fs-3 fw-semibold">{{ $purchaseStats->get($status, 0) }}</div>
+                </div>
+            </a>
+        </div>
+        @endif
+    @endforeach
+</div>
+@endif
+
 {{-- ── Performance por colaborador ───────────────────────── --}}
 <h6 class="mb-3">
     Performance por colaborador

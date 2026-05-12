@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\PurchaseRequest;
 use App\Models\SupportRequest;
 use App\Models\TaskOccurrence;
 use App\Models\Unit;
@@ -126,6 +127,18 @@ class DashboardController extends Controller
                 ]);
         }
 
+        // ── Compras ativas (manager+) ─────────────────────────────
+        $purchaseStats = null;
+        if ($user->isManagerOrAbove()) {
+            $prBase = PurchaseRequest::whereIn('status', PurchaseRequest::ACTIVE_STATUSES);
+            if ($unitIds !== null) {
+                $prBase->where(fn($q) => $q->whereIn('unit_id', $unitIds)->orWhereNull('unit_id'));
+            }
+            $purchaseStats = $prBase->selectRaw('status, COUNT(*) as cnt')
+                ->groupBy('status')
+                ->pluck('cnt', 'status');
+        }
+
         // ── Visão geral de solicitações (só superadmin) ──────────
         $supportStats = null;
         if ($user->isSuperAdmin()) {
@@ -159,7 +172,8 @@ class DashboardController extends Controller
             'byUser', 'date', 'dateFrom', 'dateTo', 'isRange',
             'days', 'avgDone', 'avgNot', 'daily', 'supportStats',
             'visibleUnits', 'companyUnits', 'selectedUnitId',
-            'allCompanies', 'selectedCompanyId', 'filterCompany'
+            'allCompanies', 'selectedCompanyId', 'filterCompany',
+            'purchaseStats'
         ));
     }
 
