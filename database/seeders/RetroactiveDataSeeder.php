@@ -202,22 +202,14 @@ class RetroactiveDataSeeder extends Seeder
                 }
 
                 // Clock in: between 07:45 and 08:30
-                $clockIn = $current->copy()->setHour(8)->setMinute(0)->addMinutes(rand(-15, 30));
-
-                // Lunch out: around 12:00
-                $lunchOut = $current->copy()->setHour(12)->addMinutes(rand(-10, 10));
-
-                // Lunch in: around 13:00
-                $lunchIn  = $current->copy()->setHour(13)->addMinutes(rand(-5, 20));
+                $clockIn  = $current->copy()->setHour(8)->setMinute(0)->addMinutes(rand(-15, 30));
 
                 // Clock out: between 17:00 and 18:15
                 $clockOut = $current->copy()->setHour(17)->addMinutes(rand(0, 75));
 
                 $entries = [
-                    ['clock_in',   $clockIn],
-                    ['lunch_out',  $lunchOut],
-                    ['lunch_in',   $lunchIn],
-                    ['clock_out',  $clockOut],
+                    ['clock_in',  $clockIn],
+                    ['clock_out', $clockOut],
                 ];
 
                 foreach ($entries as [$type, $time]) {
