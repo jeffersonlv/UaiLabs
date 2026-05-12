@@ -288,15 +288,15 @@ class RetroactiveDataSeeder extends Seeder
                     // 85% completed, 10% missed (pending), 5% justification
                     $rand = rand(1, 100);
                     if ($rand <= 85) {
-                        $status      = 'done';
+                        $status      = 'DONE';
                         $completedBy = $doers->random()->id;
                         $completedAt = $periodStart->copy()->setHour(rand(8, 11))->addMinutes(rand(0, 59));
                     } elseif ($rand <= 90) {
-                        $status      = 'missed';
+                        $status      = 'OVERDUE';
                         $completedBy = null;
                         $completedAt = null;
                     } else {
-                        $status      = 'done';
+                        $status      = 'DONE';
                         $completedBy = $doers->random()->id;
                         $completedAt = $periodStart->copy()->setHour(rand(8, 11));
                     }
