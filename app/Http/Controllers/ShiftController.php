@@ -83,6 +83,7 @@ class ShiftController extends Controller
 
     public function update(StoreShiftRequest $request, Shift $shift)
     {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $this->authorizeUnit($shift->unit_id);
 
         $shift->update($request->validated());
@@ -92,6 +93,7 @@ class ShiftController extends Controller
 
     public function destroy(Shift $shift)
     {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $this->authorizeUnit($shift->unit_id);
         AuditLogger::crud('shift.deleted', 'shift', $shift->id, $shift->user->name);
         $shift->delete();

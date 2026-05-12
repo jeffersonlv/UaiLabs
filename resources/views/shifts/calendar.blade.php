@@ -87,12 +87,14 @@
                 <div class="text-muted small" id="sdmNotes"></div>
             </div>
             <div class="modal-footer py-2 d-flex flex-column gap-2 align-items-stretch">
+                @if(auth()->user()->isManagerOrAbove())
                 <a id="sdmEdit" href="#" class="btn btn-sm btn-outline-primary w-100">
                     <i class="bi bi-pencil me-1"></i>Editar
                 </a>
                 <button id="sdmDelete" type="button" class="btn btn-sm btn-outline-danger w-100">
                     <i class="bi bi-trash me-1"></i>Excluir turno
                 </button>
+                @endif
                 <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
