@@ -12,6 +12,6 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        'clock/credential', // autenticado por username+password, não por sessão
     ];
 }
