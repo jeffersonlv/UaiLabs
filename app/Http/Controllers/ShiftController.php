@@ -153,7 +153,7 @@ class ShiftController extends Controller
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
 
-        $templates = ShiftTemplate::with('unit')->orderBy('name')->get();
+        $templates = ShiftTemplate::with(['unit', 'unit.users' => fn($q) => $q->where('active', true)->orderBy('name')])->orderBy('name')->get();
 
         return view('shifts.templates.index', compact('templates', 'units'));
     }
@@ -206,6 +206,30 @@ class ShiftController extends Controller
         }
 
         return back()->with('success', 'Template aplicado.');
+    }
+
+    public function updateTemplate(Request $request, ShiftTemplate $template)
+    {
+        $this->authorizeUnit($template->unit_id);
+        $request->validate([
+            'name'   => 'required|string|max:100',
+            'period' => 'required|in:weekly,biweekly,monthly',
+            'config' => 'nullable|string',
+        ]);
+        $config = json_decode($request->input('config', '[]'), true) ?? [];
+        $template->update([
+            'name'   => $request->name,
+            'period' => $request->period,
+            'config' => $config,
+        ]);
+        return back()->with('success', 'Template atualizado.');
+    }
+
+    public function destroyTemplate(ShiftTemplate $template)
+    {
+        $this->authorizeUnit($template->unit_id);
+        $template->delete();
+        return back()->with('success', 'Template removido.');
     }
 
     private function authorizeUnit(int $unitId): void
