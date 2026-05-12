@@ -16,7 +16,7 @@ class PurchaseRequestController extends Controller
         $unitIds = $user->visibleUnitIds();
 
         $active = PurchaseRequest::with('user', 'unit')
-            ->whereIn('status', ['requested', 'ordered'])
+            ->whereIn('status', PurchaseRequest::ACTIVE_STATUSES)
             ->when($unitIds !== null, fn($q) => $q->where(fn($q2) =>
                 $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')
             ))
@@ -56,8 +56,10 @@ class PurchaseRequestController extends Controller
         $this->authorizeAccess($purchaseRequest);
         $newStatus = $request->input('status');
 
+        abort_unless($purchaseRequest->isActive(), 422);
+        abort_unless(in_array($newStatus, ['ordered', 'purchased', 'received', 'cancelled']), 422);
+
         if ($newStatus === 'cancelled') {
-            abort_unless($purchaseRequest->canBeCancelledBy($user), 403);
             $request->validate([
                 'cancel_reason'        => 'required|in:ja_comprado,nao_necessario,personalizado',
                 'cancel_reason_custom' => 'required_if:cancel_reason,personalizado|nullable|string|max:200',
@@ -66,8 +68,6 @@ class PurchaseRequestController extends Controller
                 ? $request->cancel_reason_custom
                 : \App\Models\PurchaseRequest::CANCEL_REASONS[$request->cancel_reason];
         } else {
-            abort_unless($user->isManagerOrAbove(), 403);
-            abort_unless(in_array($newStatus, ['ordered', 'purchased']), 422);
             $reason = null;
         }
 
@@ -92,7 +92,7 @@ class PurchaseRequestController extends Controller
         $unitIds = $user->visibleUnitIds();
 
         $history = PurchaseRequest::with('user', 'unit', 'statusChangedBy')
-            ->whereIn('status', ['purchased', 'cancelled'])
+            ->whereIn('status', PurchaseRequest::DONE_STATUSES)
             ->when($unitIds !== null, fn($q) => $q->where(fn($q2) =>
                 $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')
             ))

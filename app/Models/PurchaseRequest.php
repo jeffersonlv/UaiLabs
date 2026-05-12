@@ -18,9 +18,13 @@ class PurchaseRequest extends Model
     const STATUSES = [
         'requested' => ['label' => 'Solicitado', 'color' => 'warning'],
         'ordered'   => ['label' => 'Pedido',      'color' => 'info'],
-        'purchased' => ['label' => 'Comprado',    'color' => 'success'],
+        'purchased' => ['label' => 'Comprado',    'color' => 'primary'],
+        'received'  => ['label' => 'Recebido',    'color' => 'success'],
         'cancelled' => ['label' => 'Cancelado',   'color' => 'secondary'],
     ];
+
+    const ACTIVE_STATUSES = ['requested', 'ordered', 'purchased'];
+    const DONE_STATUSES   = ['received', 'cancelled'];
 
     const CANCEL_REASONS = [
         'ja_comprado'     => 'Já foi comprado',
@@ -41,8 +45,8 @@ class PurchaseRequest extends Model
     public function statusLabel(): string { return self::STATUSES[$this->status]['label'] ?? ucfirst($this->status); }
     public function statusColor(): string { return self::STATUSES[$this->status]['color'] ?? 'secondary'; }
 
-    public function canBeCancelledBy(User $user): bool
+    public function isActive(): bool
     {
-        return $this->status === 'requested';
+        return in_array($this->status, self::ACTIVE_STATUSES);
     }
 }

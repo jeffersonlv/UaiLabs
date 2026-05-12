@@ -47,6 +47,7 @@
 </div>
 
 {{-- Active requests --}}
+@php $statusOrder = ['requested' => 0, 'ordered' => 1, 'purchased' => 2, 'received' => 3]; @endphp
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white fw-semibold">Solicitações ativas</div>
     <table class="table table-hover mb-0">
@@ -63,6 +64,7 @@
         </thead>
         <tbody>
             @forelse($active as $pr)
+            @php $currentOrder = $statusOrder[$pr->status] ?? 0; @endphp
             <tr>
                 <td class="fw-medium">{{ $pr->product_name }}</td>
                 <td class="text-muted small">{{ $pr->quantity_text ?: '—' }}</td>
@@ -71,19 +73,16 @@
                 <td><span class="badge bg-{{ $pr->statusColor() }}">{{ $pr->statusLabel() }}</span></td>
                 <td class="text-muted small">{{ $pr->created_at->format('d/m H:i') }}</td>
                 <td class="text-end">
-                    <div class="d-flex gap-1 justify-content-end">
-                        @if($user->isManagerOrAbove())
-                            @foreach(['ordered'=>'Pedido','purchased'=>'Comprado'] as $s => $label)
-                                @if($pr->status !== $s)
-                                <form method="POST" action="{{ route('purchase-requests.status', $pr) }}">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="status" value="{{ $s }}">
-                                    <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:.7rem">{{ $label }}</button>
-                                </form>
-                                @endif
-                            @endforeach
-                        @endif
-                        @if($pr->canBeCancelledBy($user))
+                    <div class="d-flex gap-1 justify-content-end flex-wrap">
+                        @foreach(['ordered' => 'Pedido', 'purchased' => 'Comprado', 'received' => 'Recebido'] as $s => $label)
+                            @if(($statusOrder[$s] ?? 0) > $currentOrder)
+                            <form method="POST" action="{{ route('purchase-requests.status', $pr) }}">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="status" value="{{ $s }}">
+                                <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:.7rem">{{ $label }}</button>
+                            </form>
+                            @endif
+                        @endforeach
                         <button type="button"
                                 class="btn btn-sm btn-outline-danger py-0"
                                 style="font-size:.7rem"
@@ -92,13 +91,13 @@
                                 data-product="{{ $pr->product_name }}">
                             Cancelar
                         </button>
-                        @endif
                         <a href="{{ route('purchase-requests.show', $pr) }}" class="btn btn-sm btn-outline-info py-0" style="font-size:.7rem">Ver</a>
                     </div>
                 </td>
             </tr>
             @empty
-            <tr><td colspan="7" class="text-muted text-center py-3">Nenhuma solicitação ativa.</td></tr>
+            @php $cols = 5 + ($units->isNotEmpty() ? 1 : 0) + ($user->isManagerOrAbove() ? 1 : 0); @endphp
+            <tr><td colspan="{{ $cols }}" class="text-muted text-center py-3">Nenhuma solicitação ativa.</td></tr>
             @endforelse
         </tbody>
     </table>
