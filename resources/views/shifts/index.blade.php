@@ -152,7 +152,7 @@
 <link href="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/styles/vis-timeline-graph2d.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/standalone/umd/vis-timeline-graph2d.min.js"></script>
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     var shiftsData = {!! $shiftsJson !!};
 
     var groups = {!! $groupsJson !!};
@@ -258,7 +258,7 @@
             document.getElementById('summary-panel').innerHTML = html || '<p class="text-muted small text-center mt-3">Sem dados.</p>';
         });
     }
-})();
+});
 </script>
 <style>
 .shift-work     { background:#0d6efd;border-color:#0a58ca;color:#fff; }

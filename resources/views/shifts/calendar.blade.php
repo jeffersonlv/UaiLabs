@@ -97,7 +97,7 @@
 
 @push('scripts')
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     var csrf    = document.querySelector('meta[name=csrf-token]').content;
     var modalEl = document.getElementById('shiftDetailModal');
 
@@ -124,7 +124,7 @@
         .then(function (r) { return r.json(); })
         .then(function (d) { if (d.ok) window.location.reload(); });
     });
-})();
+});
 </script>
 @endpush
 
