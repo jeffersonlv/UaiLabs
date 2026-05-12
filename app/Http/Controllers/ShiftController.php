@@ -38,8 +38,11 @@ class ShiftController extends Controller
             default => $start->copy()->endOfDay(),
         };
 
+        $isManager = $user->isManagerOrAbove();
+
         $shifts = Shift::with('user')
             ->where('unit_id', $unitId)
+            ->when(! $isManager, fn($q) => $q->where('user_id', $user->id))
             ->where(fn($q) => $q->whereBetween('start_at', [$start, $end])
                 ->orWhereBetween('end_at', [$start, $end]))
             ->orderBy('start_at')
@@ -49,6 +52,7 @@ class ShiftController extends Controller
             ? User::whereHas('units', fn($q) => $q->where('units.id', $unitId))
                 ->where('company_id', $user->company_id)
                 ->where('active', true)
+                ->when(! $isManager, fn($q) => $q->where('id', $user->id))
                 ->orderBy('name')
                 ->get()
             : collect();
@@ -114,6 +118,7 @@ class ShiftController extends Controller
 
         $shifts = Shift::with('user')
             ->where('unit_id', $unitId)
+            ->when(! $user->isManagerOrAbove(), fn($q) => $q->where('user_id', $user->id))
             ->where(fn($q) => $q->whereBetween('start_at', [$start, $end])
                 ->orWhereBetween('end_at', [$start, $end]))
             ->get();
@@ -127,10 +132,12 @@ class ShiftController extends Controller
         $request->validate(['unit_id' => 'required', 'start_date' => 'required|date', 'end_date' => 'required|date']);
         $this->authorizeUnit((int) $request->unit_id);
 
-        $service = new TimeCalculationService;
-        $users   = User::whereHas('units', fn($q) => $q->where('units.id', $request->unit_id))
-            ->where('company_id', auth()->user()->company_id)
+        $authUser = auth()->user();
+        $service  = new TimeCalculationService;
+        $users    = User::whereHas('units', fn($q) => $q->where('units.id', $request->unit_id))
+            ->where('company_id', $authUser->company_id)
             ->where('active', true)
+            ->when(! $authUser->isManagerOrAbove(), fn($q) => $q->where('id', $authUser->id))
             ->with('workSchedule')
             ->get();
 
