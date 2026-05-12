@@ -11,11 +11,10 @@ class StorePurchaseRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'unit_id'         => 'required|exists:units,id',
-            'product_name'    => 'required|string|max:150',
-            'quantity'        => 'required|numeric|min:0.001',
-            'unit_of_measure' => 'required|in:un,kg,g,l,ml,cx',
-            'notes'           => 'nullable|string|max:500',
+            'unit_id'       => 'nullable|exists:units,id',
+            'product_name'  => 'required|string|max:150',
+            'quantity_text' => 'nullable|string|max:100',
+            'notes'         => 'nullable|string|max:500',
         ];
     }
 }

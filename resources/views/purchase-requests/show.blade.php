@@ -12,7 +12,7 @@
                 <dt class="col-5">Produto</dt>
                 <dd class="col-7">{{ $purchaseRequest->product_name }}</dd>
                 <dt class="col-5">Quantidade</dt>
-                <dd class="col-7">{{ $purchaseRequest->quantity }} {{ $purchaseRequest->uomLabel() }}</dd>
+                <dd class="col-7">{{ $purchaseRequest->quantity_text ?: '—' }}</dd>
                 <dt class="col-5">Unidade</dt>
                 <dd class="col-7">{{ $purchaseRequest->unit?->name ?? '—' }}</dd>
                 <dt class="col-5">Observações</dt>
@@ -24,6 +24,10 @@
                 @if($purchaseRequest->status_changed_at)
                 <dt class="col-5">Atualizado em</dt>
                 <dd class="col-7 text-muted">{{ $purchaseRequest->status_changed_at->format('d/m/Y H:i') }} por {{ $purchaseRequest->statusChangedBy?->name }}</dd>
+                @endif
+                @if($purchaseRequest->cancellation_reason)
+                <dt class="col-5">Motivo</dt>
+                <dd class="col-7 text-muted">{{ $purchaseRequest->cancellation_reason }}</dd>
                 @endif
             </dl>
         </div>

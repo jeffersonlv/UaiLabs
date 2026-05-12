@@ -26,7 +26,7 @@
             @endphp
             <tr class="{{ $cancelled ? 'table-light text-muted' : '' }}">
                 <td class="{{ $purchased ? 'text-decoration-line-through' : '' }}">{{ $pr->product_name }}</td>
-                <td>{{ $pr->quantity }} {{ $pr->uomLabel() }}</td>
+                <td class="text-muted small">{{ $pr->quantity_text ?: '—' }}</td>
                 <td>{{ $pr->unit?->name ?? '—' }}</td>
                 @if($user->isManagerOrAbove()) <td>{{ $pr->user?->name ?? '—' }}</td> @endif
                 <td><span class="badge bg-{{ $pr->statusColor() }}">{{ $pr->statusLabel() }}</span></td>

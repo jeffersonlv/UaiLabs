@@ -50,28 +50,35 @@ class PurchaseRequestController extends Controller
 
     public function updateStatus(Request $request, PurchaseRequest $purchaseRequest)
     {
-        $user = auth()->user();
+        $user      = auth()->user();
         $this->authorizeAccess($purchaseRequest);
-
         $newStatus = $request->input('status');
 
-        // Only admin/manager can change status (except requester cancelling own)
         if ($newStatus === 'cancelled') {
             abort_unless($purchaseRequest->canBeCancelledBy($user), 403);
+            $request->validate([
+                'cancel_reason'        => 'required|in:ja_comprado,nao_necessario,personalizado',
+                'cancel_reason_custom' => 'required_if:cancel_reason,personalizado|nullable|string|max:200',
+            ]);
+            $reason = $request->cancel_reason === 'personalizado'
+                ? $request->cancel_reason_custom
+                : \App\Models\PurchaseRequest::CANCEL_REASONS[$request->cancel_reason];
         } else {
             abort_unless($user->isManagerOrAbove(), 403);
             abort_unless(in_array($newStatus, ['ordered', 'purchased']), 422);
+            $reason = null;
         }
 
         $old = $purchaseRequest->status;
         $purchaseRequest->update([
-            'status'            => $newStatus,
-            'status_changed_by' => $user->id,
-            'status_changed_at' => now(),
+            'status'               => $newStatus,
+            'status_changed_by'    => $user->id,
+            'status_changed_at'    => now(),
+            'cancellation_reason'  => $reason,
         ]);
 
         AuditLogger::crud("purchase_request.{$newStatus}", 'purchase_request', $purchaseRequest->id, $purchaseRequest->product_name, [
-            'de' => $old, 'para' => $newStatus,
+            'de' => $old, 'para' => $newStatus, 'motivo' => $reason,
         ]);
 
         return back()->with('success', 'Status atualizado.');

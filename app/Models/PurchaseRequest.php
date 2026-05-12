@@ -9,20 +9,24 @@ class PurchaseRequest extends Model
 {
     protected $fillable = [
         'company_id', 'unit_id', 'user_id',
-        'product_name', 'quantity', 'unit_of_measure',
-        'notes', 'status', 'status_changed_by', 'status_changed_at',
+        'product_name', 'quantity_text',
+        'notes', 'status', 'status_changed_by', 'status_changed_at', 'cancellation_reason',
     ];
 
-    protected $casts = ['status_changed_at' => 'datetime', 'quantity' => 'decimal:3'];
+    protected $casts = ['status_changed_at' => 'datetime'];
 
     const STATUSES = [
-        'requested' => ['label' => 'Solicitado',  'color' => 'warning'],
-        'ordered'   => ['label' => 'Pedido',       'color' => 'info'],
-        'purchased' => ['label' => 'Comprado',     'color' => 'success'],
-        'cancelled' => ['label' => 'Cancelado',    'color' => 'secondary'],
+        'requested' => ['label' => 'Solicitado', 'color' => 'warning'],
+        'ordered'   => ['label' => 'Pedido',      'color' => 'info'],
+        'purchased' => ['label' => 'Comprado',    'color' => 'success'],
+        'cancelled' => ['label' => 'Cancelado',   'color' => 'secondary'],
     ];
 
-    const UNITS_OF_MEASURE = ['un' => 'Unidade', 'kg' => 'Kg', 'g' => 'g', 'l' => 'L', 'ml' => 'mL', 'cx' => 'Caixa'];
+    const CANCEL_REASONS = [
+        'ja_comprado'     => 'Já foi comprado',
+        'nao_necessario'  => 'Não é mais necessário',
+        'personalizado'   => 'Outro motivo',
+    ];
 
     protected static function booted(): void
     {
@@ -36,13 +40,9 @@ class PurchaseRequest extends Model
 
     public function statusLabel(): string { return self::STATUSES[$this->status]['label'] ?? ucfirst($this->status); }
     public function statusColor(): string { return self::STATUSES[$this->status]['color'] ?? 'secondary'; }
-    public function uomLabel(): string    { return self::UNITS_OF_MEASURE[$this->unit_of_measure] ?? $this->unit_of_measure; }
 
     public function canBeCancelledBy(User $user): bool
     {
-        if ($this->status !== 'requested') {
-            return false;
-        }
-        return $this->user_id === $user->id || $user->isAdminOrAbove();
+        return $this->status === 'requested';
     }
 }
