@@ -201,16 +201,22 @@ class ShiftController extends Controller
             foreach ($config as $entry) {
                 $day = $start->copy()->addWeeks($w)->startOfWeek()->addDays($entry['day_of_week']);
 
+                $shiftStart = $day->copy()->setTimeFromTimeString($entry['start_time']);
+                $shiftEnd   = $day->copy()->setTimeFromTimeString($entry['end_time']);
+
+                // Overlap: existing.start < new.end AND existing.end > new.start
                 $existing = Shift::where('user_id', $entry['user_id'])
                     ->where('unit_id', $template->unit_id)
-                    ->whereDate('start_at', $day->toDateString())
+                    ->where('start_at', '<', $shiftEnd)
+                    ->where('end_at', '>', $shiftStart)
                     ->exists();
 
                 if ($existing) {
                     if ($conflict === 'replace') {
                         Shift::where('user_id', $entry['user_id'])
                             ->where('unit_id', $template->unit_id)
-                            ->whereDate('start_at', $day->toDateString())
+                            ->where('start_at', '<', $shiftEnd)
+                            ->where('end_at', '>', $shiftStart)
                             ->delete();
                     } else {
                         $skipped++;
@@ -273,14 +279,20 @@ class ShiftController extends Controller
     private function shiftJson(Shift $shift): array
     {
         return [
-            'id'       => $shift->id,
-            'user'     => $shift->user->name,
-            'user_id'  => $shift->user_id,
-            'start_at' => $shift->start_at->toIso8601String(),
-            'end_at'   => $shift->end_at->toIso8601String(),
-            'type'     => $shift->type,
-            'color'    => $shift->typeColor(),
-            'notes'    => $shift->notes,
+            'id'         => $shift->id,
+            'user'       => $shift->user->name,
+            'user_id'    => $shift->user_id,
+            'start_at'   => $shift->start_at->toIso8601String(),
+            'end_at'     => $shift->end_at->toIso8601String(),
+            'start_fmt'  => $shift->start_at->format('H:i'),
+            'end_fmt'    => $shift->end_at->format('H:i'),
+            'date_fmt'   => $shift->start_at->format('d/m/Y'),
+            'type'       => $shift->type,
+            'type_label' => $shift->typeLabel(),
+            'color'      => $shift->typeColor(),
+            'notes'      => $shift->notes,
+            'edit_url'   => route('shifts.show', $shift),
+            'delete_url' => route('shifts.destroy', $shift),
         ];
     }
 }

@@ -101,15 +101,50 @@
     </div>
 </div>
 
+{{-- Modal: Detalhe do turno (timeline) --}}
+<div class="modal fade" id="shiftDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title" id="sdmName"></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <div class="small fw-semibold mb-1" id="sdmTime"></div>
+                <span id="sdmType" class="badge mb-1"></span>
+                <div class="text-muted small" id="sdmNotes"></div>
+            </div>
+            <div class="modal-footer py-2 gap-2">
+                <a id="sdmEdit" href="#" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>Editar
+                </a>
+                <button id="sdmDelete" class="btn btn-sm btn-outline-danger" data-url="" data-name="">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @php
     $shiftsJson = json_encode($shifts->map(fn($s) => [
-        'id'        => $s->id,
-        'group'     => $s->user_id,
-        'content'   => $s->typeLabel() . ($s->notes ? ': ' . $s->notes : ''),
-        'start'     => $s->start_at->toIso8601String(),
-        'end'       => $s->end_at->toIso8601String(),
-        'className' => 'shift-' . $s->type,
-        'title'     => $s->user->name . '<br>' . $s->start_at->format('H:i') . '–' . $s->end_at->format('H:i'),
+        'id'         => $s->id,
+        'group'      => $s->user_id,
+        'content'    => $s->start_at->format('H:i') . '–' . $s->end_at->format('H:i'),
+        'start'      => $s->start_at->toIso8601String(),
+        'end'        => $s->end_at->toIso8601String(),
+        'className'  => 'shift-' . $s->type,
+        'title'      => $s->user->name . ' · ' . $s->start_at->format('H:i') . '–' . $s->end_at->format('H:i'),
+        'user'       => $s->user->name,
+        'start_fmt'  => $s->start_at->format('H:i'),
+        'end_fmt'    => $s->end_at->format('H:i'),
+        'date_fmt'   => $s->start_at->format('d/m/Y'),
+        'type_label' => $s->typeLabel(),
+        'color'      => $s->typeColor(),
+        'notes'      => $s->notes ?? '',
+        'edit_url'   => route('shifts.show', $s),
+        'delete_url' => route('shifts.destroy', $s),
     ]), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     $groupsJson = json_encode($unitUsers->map(fn($u) => ['id' => $u->id, 'content' => $u->name]));
 @endphp
@@ -147,11 +182,23 @@
     }
     var timeline = new vis.Timeline(container, items, groupSet, tlOptions);
 
-    // Open show modal on click
+    // Click on shift item — open detail modal
+    var shiftMap = {};
+    shiftsData.forEach(function (s) { shiftMap[s.id] = s; });
+
     timeline.on('click', function (props) {
-        if (props.item) {
-            window.location.href = '/shifts/' + props.item;
-        }
+        if (!props.item) return;
+        var s = shiftMap[props.item];
+        if (!s) return;
+        document.getElementById('sdmName').textContent  = s.user;
+        document.getElementById('sdmTime').textContent  = s.date_fmt + ' · ' + s.start_fmt + '–' + s.end_fmt;
+        document.getElementById('sdmType').className    = 'badge bg-' + s.color;
+        document.getElementById('sdmType').textContent  = s.type_label;
+        document.getElementById('sdmNotes').textContent = s.notes || '';
+        document.getElementById('sdmEdit').href         = s.edit_url;
+        document.getElementById('sdmDelete').dataset.url  = s.delete_url;
+        document.getElementById('sdmDelete').dataset.name = s.user;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftDetailModal')).show();
     });
 
     // Add shift form submit
@@ -176,6 +223,18 @@
                 window.location.reload();
             }
         });
+    });
+
+    // Delete from detail modal
+    document.getElementById('sdmDelete').addEventListener('click', function () {
+        var btn = this;
+        if (!confirm('Excluir turno de ' + btn.dataset.name + '?')) return;
+        fetch(btn.dataset.url, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) window.location.reload(); });
     });
 
     // Load summary

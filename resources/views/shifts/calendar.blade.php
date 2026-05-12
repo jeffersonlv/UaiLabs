@@ -45,10 +45,19 @@
                 <div class="cal-cell">
                     <div class="cal-day-num">{{ $day }}</div>
                     @foreach($dayShifts->take(3) as $s)
-                    <a href="{{ route('shifts.show', $s) }}"
-                       class="badge bg-{{ $typeColors[$s->type] ?? 'secondary' }} d-block text-truncate mb-1 cal-badge">
-                        {{ $s->user->name ?? '—' }} {{ \Carbon\Carbon::parse($s->start_at)->format('H:i') }}
-                    </a>
+                    <div class="cal-badge bg-{{ $typeColors[$s->type] ?? 'secondary' }} text-white mb-1"
+                         data-id="{{ $s->id }}"
+                         data-name="{{ $s->user->name ?? '—' }}"
+                         data-date="{{ $s->start_at->format('d/m/Y') }}"
+                         data-start="{{ $s->start_at->format('H:i') }}"
+                         data-end="{{ $s->end_at->format('H:i') }}"
+                         data-type="{{ $s->typeLabel() }}"
+                         data-color="{{ $typeColors[$s->type] ?? 'secondary' }}"
+                         data-notes="{{ $s->notes ?? '' }}"
+                         data-edit="{{ route('shifts.show', $s) }}"
+                         data-delete="{{ route('shifts.destroy', $s) }}">
+                        {{ $s->user->name ?? '—' }} · {{ $s->start_at->format('H:i') }}–{{ $s->end_at->format('H:i') }}
+                    </div>
                     @endforeach
                     @if($dayShifts->count() > 3)
                     <div class="cal-more">+{{ $dayShifts->count() - 3 }} mais</div>
@@ -59,6 +68,65 @@
         </div>
     </div>
 </div>
+
+{{-- Modal: Detalhe do turno --}}
+<div class="modal fade" id="shiftDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title" id="sdmName"></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <div class="small fw-semibold mb-1" id="sdmTime"></div>
+                <span id="sdmType" class="badge mb-1"></span>
+                <div class="text-muted small" id="sdmNotes"></div>
+            </div>
+            <div class="modal-footer py-2 gap-2">
+                <a id="sdmEdit" href="#" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>Editar
+                </a>
+                <button id="sdmDelete" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function () {
+    var csrf = document.querySelector('meta[name=csrf-token]').content;
+    var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftDetailModal'));
+
+    document.querySelectorAll('.cal-badge').forEach(function (badge) {
+        badge.addEventListener('click', function () {
+            document.getElementById('sdmName').textContent  = badge.dataset.name;
+            document.getElementById('sdmTime').textContent  = badge.dataset.date + ' · ' + badge.dataset.start + '–' + badge.dataset.end;
+            document.getElementById('sdmType').className    = 'badge bg-' + badge.dataset.color;
+            document.getElementById('sdmType').textContent  = badge.dataset.type;
+            document.getElementById('sdmNotes').textContent = badge.dataset.notes || '';
+            document.getElementById('sdmEdit').href         = badge.dataset.edit;
+            document.getElementById('sdmDelete').dataset.url  = badge.dataset.delete;
+            document.getElementById('sdmDelete').dataset.name = badge.dataset.name;
+            modal.show();
+        });
+    });
+
+    document.getElementById('sdmDelete').addEventListener('click', function () {
+        if (!confirm('Excluir turno de ' + this.dataset.name + '?')) return;
+        fetch(this.dataset.url, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) window.location.reload(); });
+    });
+})();
+</script>
+@endpush
 
 @push('styles')
 <style>
@@ -93,11 +161,15 @@
 }
 .cal-badge {
     font-size: .6rem;
-    text-decoration: none;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    border-radius: 3px;
+    padding: 1px 4px;
+    cursor: pointer;
+    user-select: none;
 }
+.cal-badge:hover { opacity: .85; }
 .cal-more {
     font-size: .6rem;
     color: #6c757d;
