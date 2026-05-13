@@ -20,7 +20,7 @@ class ModuleRegistry
                 'name'        => 'Solicitação de Compras',
                 'description' => 'Registro e acompanhamento de solicitações de compras',
                 'icon'        => 'bi-cart-plus',
-                'route'       => 'purchase-requests.index',
+                'route'       => 'purchase-items.index',
                 'active'      => true,
             ],
             [
