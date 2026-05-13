@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\PurchaseItem;
-use App\Models\Unit;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseItemSeeder extends Seeder
 {
@@ -44,38 +43,38 @@ class PurchaseItemSeeder extends Seeder
 
     private function seedItems($company, $units, $users, Carbon $start, Carbon $today): void
     {
-        $rows = [];
-        $now  = now();
+        $rows     = [];
+        $counts   = [0, 0, 1, 1, 2, 2, 3, 4];
+        $unitArr  = $units->values()->all();
+        $userArr  = $users->values()->all();
 
         for ($day = $start->copy(); $day->lte($today); $day->addDay()) {
-            // 0-4 items per day, skip ~20% of days
-            $count = fake()->randomElement([0, 0, 1, 1, 2, 2, 3, 4]);
+            $count = $counts[array_rand($counts)];
             if ($count === 0) continue;
 
-            $dayProducts = fake()->randomElements($this->products, min($count, count($this->products)));
+            $shuffled = $this->products;
+            shuffle($shuffled);
+            $dayProducts = array_slice($shuffled, 0, $count);
             $daysOld     = $today->diffInDays($day);
 
             foreach ($dayProducts as $product) {
-                $unit      = $units->random();
-                $creator   = $users->random();
-                $requestedAt = $day->toDateString();
+                $unit    = $unitArr[array_rand($unitArr)];
+                $creator = $userArr[array_rand($userArr)];
 
-                // Chance of being done increases with age
                 if ($daysOld > 7) {
-                    $isDone = fake()->boolean(90);
+                    $isDone = rand(1, 100) <= 90;
                 } elseif ($daysOld > 0) {
-                    $isDone = fake()->boolean(60);
+                    $isDone = rand(1, 100) <= 60;
                 } else {
-                    $isDone = fake()->boolean(20);
+                    $isDone = rand(1, 100) <= 20;
                 }
 
                 $doneAt = null;
                 $doneBy = null;
 
                 if ($isDone) {
-                    $doneHoursAfter = fake()->numberBetween(1, 8);
-                    $doneAt = $day->copy()->addHours($doneHoursAfter)->toDateTimeString();
-                    $doneBy = $users->random()->id;
+                    $doneAt = $day->copy()->addHours(rand(1, 8))->toDateTimeString();
+                    $doneBy = $userArr[array_rand($userArr)]->id;
                 }
 
                 $rows[] = [
@@ -84,7 +83,7 @@ class PurchaseItemSeeder extends Seeder
                     'created_by'   => $creator->id,
                     'name'         => $product,
                     'status'       => $isDone ? 'done' : 'pending',
-                    'requested_at' => $requestedAt,
+                    'requested_at' => $day->toDateString(),
                     'done_at'      => $doneAt,
                     'done_by'      => $doneBy,
                     'created_at'   => $day->toDateTimeString(),
@@ -93,9 +92,8 @@ class PurchaseItemSeeder extends Seeder
             }
         }
 
-        // Insert in chunks to avoid query size limits
         foreach (array_chunk($rows, 100) as $chunk) {
-            \Illuminate\Support\Facades\DB::table('purchase_items')->insert($chunk);
+            DB::table('purchase_items')->insert($chunk);
         }
 
         $this->command->info("  [{$company->name}] " . count($rows) . " purchase items gerados.");
