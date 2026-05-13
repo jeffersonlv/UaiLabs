@@ -45,6 +45,7 @@ $jobs = [];
 if (isset($_GET['all'])) {
     $_GET['pull']     = 1;
     $_GET['migrate']  = 1;
+    $_GET['clear']    = 1;
     $_GET['optimize'] = 1;
 }
 

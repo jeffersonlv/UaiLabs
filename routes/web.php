@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ClockController;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\PurchaseItemController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SubcategoryController;
@@ -56,11 +57,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         // ── Módulo: Solicitação de Compras ────────────────────────
         Route::middleware('module:purchase_requests')->group(function () {
-            Route::get('/purchase-requests', [PurchaseRequestController::class, 'index'])->name('purchase-requests.index');
-            Route::post('/purchase-requests', [PurchaseRequestController::class, 'store'])->name('purchase-requests.store');
-            Route::get('/purchase-requests/history', [PurchaseRequestController::class, 'history'])->name('purchase-requests.history');
-            Route::get('/purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'show'])->name('purchase-requests.show');
-            Route::patch('/purchase-requests/{purchaseRequest}/status', [PurchaseRequestController::class, 'updateStatus'])->name('purchase-requests.status');
+            Route::get('/purchase-items', [PurchaseItemController::class, 'index'])->name('purchase-items.index');
+            Route::post('/purchase-items', [PurchaseItemController::class, 'store'])->name('purchase-items.store');
+            Route::patch('/purchase-items/{purchaseItem}/toggle', [PurchaseItemController::class, 'toggle'])->name('purchase-items.toggle');
         });
 
         // ── Módulo: Escala de Funcionários ────────────────────────
