@@ -3,9 +3,17 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="bi bi-calendar-month me-2"></i>Escala — Calendário</h4>
-    <a href="{{ route('shifts.index', ['unit_id'=>$unitId]) }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-bar-chart-steps me-1"></i>Timeline
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ route('shifts.timesheet', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-table me-1"></i>Planilha
+        </a>
+        <a href="{{ route('shifts.board', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Quadro
+        </a>
+        <a href="{{ route('shifts.index', ['unit_id'=>$unitId]) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-bar-chart-steps me-1"></i>Timeline
+        </a>
+    </div>
 </div>
 <form method="GET" action="{{ route('shifts.calendar') }}" class="d-flex gap-2 mb-3">
     <select name="unit_id" class="form-select form-select-sm" style="width:200px" onchange="this.form.submit()">

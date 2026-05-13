@@ -9,7 +9,7 @@ class Shift extends Model
 {
     protected $fillable = [
         'company_id', 'unit_id', 'user_id',
-        'start_at', 'end_at', 'type', 'notes', 'created_by',
+        'start_at', 'end_at', 'type', 'station_id', 'notes', 'created_by',
     ];
 
     protected $casts = [
@@ -33,6 +33,7 @@ class Shift extends Model
     public function unit()      { return $this->belongsTo(Unit::class); }
     public function user()      { return $this->belongsTo(User::class); }
     public function creator()   { return $this->belongsTo(User::class, 'created_by'); }
+    public function station()   { return $this->belongsTo(Station::class); }
 
     public function typeLabel(): string { return self::TYPES[$this->type]['label'] ?? ucfirst($this->type); }
     public function typeColor(): string { return self::TYPES[$this->type]['color'] ?? 'secondary'; }

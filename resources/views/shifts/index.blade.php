@@ -4,6 +4,12 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Escala de Funcionários</h4>
     <div class="d-flex gap-2">
+        <a href="{{ route('shifts.timesheet', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-table me-1"></i>Planilha
+        </a>
+        <a href="{{ route('shifts.board', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Quadro
+        </a>
         <a href="{{ route('shifts.calendar', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-calendar-month me-1"></i>Calendário
         </a>

@@ -11,12 +11,13 @@ class StoreShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'unit_id'  => 'required|exists:units,id',
-            'user_id'  => 'required|exists:users,id',
-            'start_at' => 'required|date',
-            'end_at'   => 'required|date|after:start_at',
-            'type'     => 'required|in:work,vacation,leave,holiday',
-            'notes'    => 'nullable|string|max:500',
+            'unit_id'    => 'nullable|exists:units,id',
+            'user_id'    => 'required|exists:users,id',
+            'start_at'   => 'required|date',
+            'end_at'     => 'required|date|after:start_at',
+            'type'       => 'required|in:work,vacation,leave,holiday',
+            'station_id' => 'nullable|exists:stations,id',
+            'notes'      => 'nullable|string|max:500',
         ];
     }
 }

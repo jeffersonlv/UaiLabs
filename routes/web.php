@@ -9,6 +9,7 @@ use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\PurchaseItemController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\StationController;
 use App\Http\Controllers\SubcategoryController;
 use App\Http\Controllers\SupportRequestController;
 use App\Http\Controllers\TaskOccurrenceController;
@@ -67,6 +68,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
             Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
             Route::get('/shifts/calendar', [ShiftController::class, 'calendar'])->name('shifts.calendar');
+            Route::get('/shifts/timesheet', [ShiftController::class, 'timesheet'])->name('shifts.timesheet');
+            Route::get('/shifts/board', [ShiftController::class, 'board'])->name('shifts.board');
+            Route::get('/shifts/board-data', [ShiftController::class, 'boardData'])->name('shifts.board-data');
             Route::get('/shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
             Route::get('/shifts/templates', [ShiftController::class, 'templates'])->name('shifts.templates.index');
             Route::post('/shifts/templates', [ShiftController::class, 'storeTemplate'])->name('shifts.templates.store');
@@ -76,6 +80,13 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('/shifts/{shift}', [ShiftController::class, 'show'])->name('shifts.show');
             Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
             Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
+
+            // Estações (aba dentro do módulo)
+            Route::get('/stations', [StationController::class, 'index'])->name('stations.index');
+            Route::post('/stations', [StationController::class, 'store'])->name('stations.store');
+            Route::put('/stations/{station}', [StationController::class, 'update'])->name('stations.update');
+            Route::delete('/stations/{station}', [StationController::class, 'destroy'])->name('stations.destroy');
+            Route::post('/stations/reorder', [StationController::class, 'reorder'])->name('stations.reorder');
         });
 
         // ── Módulo: Ponto ─────────────────────────────────────────
