@@ -34,7 +34,7 @@
     $modules = \App\Modules\ModuleRegistry::active();
 
     $moduleRoutePatterns = ['checklist','categories.*','subcategories.*','activities.*',
-        'purchase-requests.*','shifts.*','time-entries.*','work-schedules.*','estoque.*'];
+        'purchase-items.*','shifts.*','time-entries.*','work-schedules.*','estoque.*'];
     $modulesActive = request()->routeIs(...$moduleRoutePatterns);
     $adminActive   = request()->routeIs('admin.dashboard','admin.companies.*','admin.users.*','admin.audit-logs.*');
 

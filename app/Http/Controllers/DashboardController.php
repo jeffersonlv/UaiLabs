@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\PurchaseRequest;
+use App\Models\PurchaseItem;
 use App\Models\SupportRequest;
 use App\Models\TaskOccurrence;
 use App\Models\Unit;
@@ -127,16 +127,14 @@ class DashboardController extends Controller
                 ]);
         }
 
-        // ── Compras ativas (manager+) ─────────────────────────────
+        // ── Compras pendentes ─────────────────────────────────────
         $purchaseStats = null;
         if ($user->isManagerOrAbove()) {
-            $prBase = PurchaseRequest::whereIn('status', PurchaseRequest::ACTIVE_STATUSES);
-            if ($unitIds !== null) {
-                $prBase->where(fn($q) => $q->whereIn('unit_id', $unitIds)->orWhereNull('unit_id'));
-            }
-            $purchaseStats = $prBase->selectRaw('status, COUNT(*) as cnt')
-                ->groupBy('status')
-                ->pluck('cnt', 'status');
+            $purchaseStats = [
+                'today'   => PurchaseItem::where('status', 'pending')->where('requested_at', Carbon::today())->count(),
+                'old'     => PurchaseItem::where('status', 'pending')->where('requested_at', '<', Carbon::today()->subDays(6))->count(),
+                'pending' => PurchaseItem::where('status', 'pending')->count(),
+            ];
         }
 
         // ── Visão geral de solicitações (só superadmin) ──────────
