@@ -1,0 +1,13 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deployment on Hostinger
+        run: |
+          curl -f --max-time 120 "${{ secrets.DEPLOY_URL }}&all"

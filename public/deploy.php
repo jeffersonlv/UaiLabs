@@ -48,9 +48,13 @@ if (isset($_GET['all'])) {
     $_GET['optimize'] = 1;
 }
 
-if (isset($_GET['pull']))     $jobs[] = ['label' => 'git pull',           'result' => run('cd ' . BASE . ' && git pull origin main')];
-if (isset($_GET['migrate']))  $jobs[] = ['label' => 'migrate --force',    'result' => artisan('migrate --force')];
-if (isset($_GET['seed']))     $jobs[] = ['label' => 'db:seed --force',    'result' => artisan('db:seed --force')];
+if (isset($_GET['pull']))        $jobs[] = ['label' => 'git pull',              'result' => run('cd ' . BASE . ' && git pull origin main')];
+if (isset($_GET['migrate']))     $jobs[] = ['label' => 'migrate --force',     'result' => artisan('migrate --force')];
+if (isset($_GET['seed']))        $jobs[] = ['label' => 'db:seed --force',     'result' => artisan('db:seed --force')];
+if (isset($_GET['seed_class'])) {
+    $class  = preg_replace('/[^A-Za-z0-9_\\\\]/', '', $_GET['seed_class']);
+    $jobs[] = ['label' => "db:seed --class={$class}", 'result' => artisan("db:seed --class={$class} --force")];
+}
 if (isset($_GET['clear']))    $jobs[] = ['label' => 'optimize:clear',     'result' => artisan('optimize:clear')];
 if (isset($_GET['config']))   $jobs[] = ['label' => 'config:cache',       'result' => artisan('config:cache')];
 if (isset($_GET['route']))    $jobs[] = ['label' => 'route:cache',        'result' => artisan('route:cache')];
