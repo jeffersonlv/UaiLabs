@@ -46,14 +46,11 @@ class ShiftController extends Controller
         $users = $usersQuery->get();
 
         // Shifts da semana indexados por user_id → date
-        $shifts = Shift::with(['station'])
-            ->whereBetween('start_at', [$weekStart, $weekEnd])
+        $shifts = Shift::whereBetween('start_at', [$weekStart, $weekEnd])
             ->when($unitId, fn($q) => $q->where('unit_id', $unitId))
             ->when($unitIds !== null && !$unitId, fn($q) => $q->whereIn('unit_id', $unitIds))
             ->get()
             ->groupBy(fn($s) => $s->user_id . '_' . $s->start_at->toDateString());
-
-        $stations = Station::where('active', true)->orderBy('order')->orderBy('name')->get();
 
         // Dias da semana
         $days = collect();
@@ -67,7 +64,7 @@ class ShiftController extends Controller
         $templates = ShiftTemplate::where('company_id', $user->company_id)->orderBy('name')->get();
 
         return view('shifts.timesheet', compact(
-            'users', 'days', 'shifts', 'stations', 'templates',
+            'users', 'days', 'shifts', 'templates',
             'units', 'unitId', 'weekParam', 'weekStart', 'weekEnd', 'isManager'
         ));
     }
@@ -122,8 +119,6 @@ class ShiftController extends Controller
 
         $weekParam = $request->input('week', Carbon::today()->format('o-\WW'));
         $weekStart = Carbon::now()->setISODate(...explode('-W', $weekParam))->startOfWeek(Carbon::MONDAY);
-        $weekEnd   = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
-
         $units  = $unitIds !== null
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
@@ -131,6 +126,7 @@ class ShiftController extends Controller
         $unitId    = $request->input('unit_id');
         $stations  = Station::where('active', true)->orderBy('order')->orderBy('name')->get();
         $isManager = $user->isManagerOrAbove();
+        $weekEnd   = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
 
         $days = collect();
         $d    = $weekStart->copy();
@@ -140,7 +136,7 @@ class ShiftController extends Controller
         }
 
         return view('shifts.board', compact(
-            'stations', 'days', 'units', 'unitId', 'weekParam', 'weekStart', 'isManager'
+            'stations', 'days', 'units', 'unitId', 'weekParam', 'weekStart', 'weekEnd', 'isManager'
         ));
     }
 
@@ -373,6 +369,7 @@ class ShiftController extends Controller
                     'user_id'    => $entry['user_id'],
                     'start_at'   => $day->copy()->setTimeFromTimeString($entry['start_time']),
                     'end_at'     => $day->copy()->setTimeFromTimeString($entry['end_time']),
+                    'station_id' => $entry['station_id'] ?? null,
                     'type'       => 'work',
                     'created_by' => auth()->id(),
                 ]);

@@ -369,9 +369,9 @@ async function deleteShift(id, btn) {
     body.append('_method', 'DELETE');
     const res = await fetch('/shifts/' + id, {method:'POST', body});
     if (res.ok) {
-        const entry = btn.closest('.shift-entry, div');
-        entry?.remove();
-        recalcTotals();
+        const entry = btn.closest('.shift-entry');
+        if (entry) { entry.remove(); recalcTotals(); }
+        else        { location.reload(); }
     }
 }
 

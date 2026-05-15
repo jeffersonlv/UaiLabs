@@ -37,7 +37,7 @@ $periods   = ['manha' => ['label'=>'Manhã', 'icon'=>'bi-sunrise',    'hint'=>'a
     <a href="{{ route('shifts.board', array_filter(['week'=>$prevWeek,'unit_id'=>$unitId])) }}"
        class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
     <span class="fw-semibold small">
-        {{ $weekStart->format('d/m') }} – {{ $weekStart->copy()->endOfWeek()->format('d/m/Y') }}
+        {{ $weekStart->format('d/m') }} – {{ $weekEnd->format('d/m/Y') }}
     </span>
     <a href="{{ route('shifts.board', array_filter(['week'=>$nextWeek,'unit_id'=>$unitId])) }}"
        class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
@@ -76,7 +76,7 @@ $periods   = ['manha' => ['label'=>'Manhã', 'icon'=>'bi-sunrise',    'hint'=>'a
         <small class="text-muted">({{ $period['hint'] }})</small>
     </div>
     <div class="card-body p-0" style="overflow-x:auto">
-        <table class="table table-bordered table-sm mb-0" style="min-width:900px">
+        <table class="table table-bordered table-sm mb-0" style="table-layout:fixed;width:100%;min-width:700px">
             <thead class="table-light">
                 <tr>
                     <th style="width:130px">Estação</th>
