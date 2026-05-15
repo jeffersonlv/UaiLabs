@@ -72,7 +72,7 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
                         <small class="fw-normal opacity-75">{{ $day->format('d/m') }}</small>
                     </th>
                     @endforeach
-                    <th class="text-center" style="width:90px">Total</th>
+                    <th class="text-center col-sticky-right" style="width:90px">Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -173,7 +173,7 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
                     </td>
                     @endforeach
 
-                    <td class="text-center align-middle fw-semibold small total-cell"
+                    <td class="text-center align-middle fw-semibold small total-cell col-sticky-right"
                         data-user="{{ $usr->id }}">—</td>
                 </tr>
                 @empty
@@ -187,7 +187,7 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
             <tfoot class="table-secondary">
                 <tr>
                     <td colspan="{{ count($days) + 1 }}" class="text-end fw-semibold small pe-3">Total geral da semana</td>
-                    <td class="text-center fw-bold small" id="grandTotal">—</td>
+                    <td class="text-center fw-bold small col-sticky-right" id="grandTotal">—</td>
                 </tr>
             </tfoot>
         </table>
@@ -570,4 +570,18 @@ function recalcTotals(){
 recalcTotals();
 </script>
 @endif
+@push('styles')
+<style>
+.col-sticky-right {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+}
+thead .col-sticky-right           { background: #212529; } /* table-dark */
+tbody .col-sticky-right           { background: #fff; }
+tfoot .col-sticky-right           { background: #e2e3e5; } /* table-secondary */
+/* Linha com hoje no thead */
+thead th.col-sticky-right.table-primary { background: #cfe2ff; color: #000; }
+</style>
+@endpush
 @endsection
