@@ -116,7 +116,7 @@ $boardToday = \Carbon\Carbon::today()->toDateString();
         <small class="text-muted">({{ $period['hint'] }})</small>
     </div>
     <div class="card-body p-0" style="overflow-x:auto">
-        <table class="table table-bordered table-sm mb-0" style="min-width:700px">
+        <table class="table table-bordered table-sm mb-0" style="table-layout:fixed;width:100%;min-width:600px">
             <thead class="table-light">
                 <tr>
                     <th style="width:110px" class="small">Estação</th>

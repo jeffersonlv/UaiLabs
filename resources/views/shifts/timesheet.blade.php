@@ -117,35 +117,12 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
                                        value="{{ $shift->end_at->format('H:i') }}"
                                        data-field="end_at" data-shift="{{ $shift->id }}"
                                        style="width:72px;font-size:.75rem">
-                                @else
-                                <span class="text-muted" style="font-size:.75rem">{{ $shift->start_at->format('H:i') }}–{{ $shift->end_at->format('H:i') }}</span>
-                                @endif
-
-                                @if($stations->isNotEmpty())
-                                @if($isManager)
-                                <select class="form-select form-select-sm p-0 px-1 station-select"
-                                        data-shift="{{ $shift->id }}"
-                                        style="width:90px;font-size:.7rem">
-                                    <option value="">—</option>
-                                    @foreach($stations as $st)
-                                    <option value="{{ $st->id }}"
-                                            {{ $shift->station_id == $st->id ? 'selected' : '' }}
-                                            style="color:{{ $st->color }}">{{ $st->name }}</option>
-                                    @endforeach
-                                </select>
-                                @elseif($shift->station)
-                                <span class="badge rounded-pill small"
-                                      style="background:{{ $shift->station->color }}20;color:{{ $shift->station->color }};border:1px solid {{ $shift->station->color }}">
-                                    {{ $shift->station->name }}
-                                </span>
-                                @endif
-                                @endif
-
-                                @if($isManager)
                                 <button class="btn btn-link btn-sm p-0 text-danger ms-auto"
                                         onclick="deleteShift({{ $shift->id }}, this)">
                                     <i class="bi bi-x-lg" style="font-size:.65rem"></i>
                                 </button>
+                                @else
+                                <span class="text-muted" style="font-size:.75rem">{{ $shift->start_at->format('H:i') }}–{{ $shift->end_at->format('H:i') }}</span>
                                 @endif
                             </div>
                             @endforeach
@@ -168,6 +145,53 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
                                     <i class="bi bi-moon"></i>
                                 </button>
                             </div>
+                            @endif
+
+                            {{-- Estações no rodapé da célula, agrupadas por período --}}
+                            @if($stations->isNotEmpty())
+                            @php
+                            $workShiftsCell = $dayShifts->where('type','work');
+                            $periodMap = [];
+                            foreach ($workShiftsCell as $ws) {
+                                $h = (int) $ws->start_at->format('H');
+                                $p = $h < 12 ? 'manha' : ($h < 18 ? 'tarde' : 'noite');
+                                $periodMap[$p][] = $ws;
+                            }
+                            $periodNames = ['manha'=>'Manhã','tarde'=>'Tarde','noite'=>'Noite'];
+                            @endphp
+                            @if(!empty($periodMap))
+                            <div class="border-top mt-1 pt-1">
+                                @foreach(['manha','tarde','noite'] as $pk)
+                                @if(isset($periodMap[$pk]))
+                                @foreach($periodMap[$pk] as $ws)
+                                @if($isManager)
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span class="text-muted flex-shrink-0" style="width:32px;font-size:.65rem">{{ $periodNames[$pk] }}:</span>
+                                    <select class="form-select form-select-sm p-0 px-1 station-select flex-grow-1"
+                                            data-shift="{{ $ws->id }}"
+                                            style="font-size:.7rem">
+                                        <option value="">—</option>
+                                        @foreach($stations as $st)
+                                        <option value="{{ $st->id }}"
+                                                {{ $ws->station_id == $st->id ? 'selected' : '' }}
+                                                style="color:{{ $st->color }}">{{ $st->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @elseif($ws->station)
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span class="text-muted flex-shrink-0" style="width:32px;font-size:.65rem">{{ $periodNames[$pk] }}:</span>
+                                    <span class="badge rounded-pill"
+                                          style="background:{{ $ws->station->color }}20;color:{{ $ws->station->color }};border:1px solid {{ $ws->station->color }};font-size:.6rem">
+                                        {{ $ws->station->name }}
+                                    </span>
+                                </div>
+                                @endif
+                                @endforeach
+                                @endif
+                                @endforeach
+                            </div>
+                            @endif
                             @endif
                         @endif
                     </td>
