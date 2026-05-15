@@ -68,6 +68,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
             Route::get('/shifts/calendar', [ShiftController::class, 'calendar'])->name('shifts.calendar');
             Route::get('/shifts/timesheet', [ShiftController::class, 'timesheet'])->name('shifts.timesheet');
+            Route::post('/shifts/timesheet/save-template', [ShiftController::class, 'saveWeekAsTemplate'])->name('shifts.timesheet.save-template');
             Route::get('/shifts/board', [ShiftController::class, 'board'])->name('shifts.board');
             Route::get('/shifts/board-data', [ShiftController::class, 'boardData'])->name('shifts.board-data');
             Route::get('/shifts/templates', [ShiftController::class, 'templates'])->name('shifts.templates.index');

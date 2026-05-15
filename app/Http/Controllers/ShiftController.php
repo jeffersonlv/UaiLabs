@@ -64,11 +64,55 @@ class ShiftController extends Controller
         }
 
         $isManager = $user->isManagerOrAbove();
+        $templates = ShiftTemplate::where('company_id', $user->company_id)->orderBy('name')->get();
 
         return view('shifts.timesheet', compact(
-            'users', 'days', 'shifts', 'stations',
+            'users', 'days', 'shifts', 'stations', 'templates',
             'units', 'unitId', 'weekParam', 'weekStart', 'weekEnd', 'isManager'
         ));
+    }
+
+    public function saveWeekAsTemplate(Request $request)
+    {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
+
+        $request->validate([
+            'name'   => 'required|string|max:100',
+            'period' => 'required|in:weekly,biweekly,monthly',
+            'week'   => 'required|string',
+        ]);
+
+        $user      = auth()->user();
+        $weekStart = Carbon::now()->setISODate(...explode('-W', $request->week))->startOfWeek(Carbon::MONDAY);
+        $weekEnd   = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $unitId    = $request->input('unit_id');
+        $unitIds   = $user->visibleUnitIds();
+
+        $weekShifts = Shift::whereBetween('start_at', [$weekStart, $weekEnd])
+            ->when($unitId, fn($q) => $q->where('unit_id', $unitId))
+            ->when($unitIds !== null && !$unitId, fn($q) => $q->whereIn('unit_id', $unitIds))
+            ->get();
+
+        // Converte shifts para config do template
+        // day_of_week: 0=Seg ... 6=Dom (baseado no startOfWeek Monday)
+        $config = $weekShifts->map(fn($s) => [
+            'day_of_week' => ($s->start_at->dayOfWeek + 6) % 7,
+            'user_id'     => $s->user_id,
+            'start_time'  => $s->start_at->format('H:i'),
+            'end_time'    => $s->end_at->format('H:i'),
+            'station_id'  => $s->station_id,
+            'type'        => $s->type,
+        ])->values()->all();
+
+        ShiftTemplate::create([
+            'company_id' => $user->company_id,
+            'unit_id'    => $unitId ?: null,
+            'name'       => $request->name,
+            'period'     => $request->period,
+            'config'     => $config,
+        ]);
+
+        return back()->with('success', 'Template "' . $request->name . '" salvo com ' . count($config) . ' turno(s).');
     }
 
     public function board(Request $request)
@@ -246,11 +290,11 @@ class ShiftController extends Controller
     {
         abort_unless(auth()->user()->isManagerOrAbove(), 403);
         $request->validate([
-            'unit_id' => 'required|exists:units,id',
+            'unit_id' => 'nullable|exists:units,id',
             'name'    => 'required|string|max:100',
             'period'  => 'required|in:weekly,biweekly,monthly',
         ]);
-        $this->authorizeUnit((int) $request->unit_id);
+        if ($request->unit_id) $this->authorizeUnit((int) $request->unit_id);
 
         ShiftTemplate::create($request->only('unit_id', 'name', 'period') + [
             'config'     => [],

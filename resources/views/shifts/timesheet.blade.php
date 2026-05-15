@@ -22,9 +22,9 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
             <i class="bi bi-calendar-month me-1"></i>Calendário
         </a>
         @if($isManager)
-        <a href="{{ route('shifts.templates.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-layout-text-window me-1"></i>Templates
-        </a>
+        <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#saveTemplateModal">
+            <i class="bi bi-floppy me-1"></i>Salvar semana
+        </button>
         <a href="{{ route('stations.index') }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-geo-alt me-1"></i>Estações
         </a>
@@ -264,6 +264,105 @@ $boardPeriods = ['manha' => ['label'=>'Manhã','icon'=>'bi-sunrise','hint'=>'at�
     </div>
 </div>
 @endforeach
+@endif
+
+{{-- ── Templates ────────────────────────────────────────────────────────────── --}}
+@if($isManager)
+<div class="d-flex align-items-center gap-2 mt-4 mb-2">
+    <h5 class="mb-0"><i class="bi bi-layout-text-window me-2"></i>Templates</h5>
+    <a href="{{ route('shifts.templates.index') }}" class="btn btn-sm btn-outline-secondary ms-auto">
+        <i class="bi bi-gear me-1"></i>Gerenciar
+    </a>
+</div>
+
+@if($templates->isEmpty())
+<div class="alert alert-light border py-2 small text-muted">Nenhum template salvo ainda.</div>
+@else
+@php $periodLabels = ['weekly'=>'Semanal','biweekly'=>'Quinzenal','monthly'=>'Mensal']; @endphp
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-0">
+        @foreach($templates as $tpl)
+        <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom flex-wrap">
+            <span class="fw-semibold">{{ $tpl->name }}</span>
+            <span class="badge bg-secondary-subtle text-secondary">
+                {{ $periodLabels[$tpl->period] ?? $tpl->period }}
+            </span>
+            <span class="text-muted small">{{ count($tpl->config ?? []) }} turno(s)</span>
+
+            <form method="POST" action="{{ route('shifts.templates.apply', $tpl) }}"
+                  class="d-flex gap-2 align-items-center ms-auto flex-wrap">
+                @csrf
+                <input type="hidden" name="start_date" value="{{ $weekStart->toDateString() }}">
+                <select name="conflict" class="form-select form-select-sm" style="width:130px">
+                    <option value="skip">Manter existentes</option>
+                    <option value="replace">Substituir</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary"
+                        onclick="return confirm('Aplicar template \'{{ addslashes($tpl->name) }}\' na semana {{ $weekStart->format('d/m') }}?')">
+                    <i class="bi bi-play-fill me-1"></i>Aplicar
+                </button>
+            </form>
+
+            <form method="POST" action="{{ route('shifts.templates.destroy', $tpl) }}"
+                  onsubmit="return confirm('Excluir template \'{{ addslashes($tpl->name) }}\'?')">
+                @csrf @method('DELETE')
+                <button class="btn btn-sm btn-outline-danger py-0 px-2">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
+{{-- Modal: Salvar semana como template --}}
+<div class="modal fade" id="saveTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <form method="POST" action="{{ route('shifts.timesheet.save-template') }}">
+            @csrf
+            <input type="hidden" name="week" value="{{ $weekParam }}">
+            <input type="hidden" name="unit_id" value="{{ $unitId ?? '' }}">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title">Salvar semana como template</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nome do template</label>
+                        <input type="text" name="name" class="form-control form-control-sm"
+                               required maxlength="100"
+                               placeholder="ex: Semana padrão verão">
+                    </div>
+                    <div>
+                        <label class="form-label small fw-semibold">Repetição</label>
+                        <select name="period" class="form-select form-select-sm">
+                            <option value="weekly">Semanal</option>
+                            <option value="biweekly">Quinzenal</option>
+                            <option value="monthly">Mensal (4 semanas)</option>
+                        </select>
+                    </div>
+                    <div class="form-text mt-2">
+                        Serão salvos os <strong>{{ $shifts->flatten()->count() }}</strong> turno(s) desta semana
+                        ({{ $weekStart->format('d/m') }}–{{ $weekEnd->format('d/m') }}).
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-success">Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show py-2 mt-3">
+    {{ session('success') }}
+    <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+</div>
 @endif
 
 <script>
