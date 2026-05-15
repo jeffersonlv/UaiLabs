@@ -239,8 +239,8 @@ class ShiftController extends Controller
             $unitId = $units->first()->id;
         }
 
-        $start  = Carbon::parse($month)->startOfMonth();
-        $end    = $start->copy()->endOfMonth();
+        $start = Carbon::parse($month)->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
 
         $shifts = Shift::with('user')
             ->where('unit_id', $unitId)
@@ -249,7 +249,19 @@ class ShiftController extends Controller
                 ->orWhereBetween('end_at', [$start, $end]))
             ->get();
 
-        return view('shifts.calendar', compact('units', 'unitId', 'month', 'shifts', 'start'));
+        // Dados do quadro de alocação (semana embutida)
+        $boardWeek  = $request->input('board_week', Carbon::today()->format('o-\WW'));
+        $boardStart = Carbon::now()->setISODate(...explode('-W', $boardWeek))->startOfWeek(Carbon::MONDAY);
+        $boardEnd   = $boardStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $stations   = Station::where('active', true)->orderBy('order')->orderBy('name')->get();
+        $boardDays  = collect();
+        $d = $boardStart->copy();
+        while ($d->lte($boardEnd)) { $boardDays->push($d->copy()); $d->addDay(); }
+
+        return view('shifts.calendar', compact(
+            'units', 'unitId', 'month', 'shifts', 'start',
+            'boardWeek', 'boardStart', 'boardEnd', 'boardDays', 'stations'
+        ));
     }
 
     /** Summary JSON: worked/scheduled hours per user for a period. */
