@@ -147,52 +147,6 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
                             </div>
                             @endif
 
-                            {{-- Estações no rodapé da célula, agrupadas por período --}}
-                            @if($stations->isNotEmpty())
-                            @php
-                            $workShiftsCell = $dayShifts->where('type','work');
-                            $periodMap = [];
-                            foreach ($workShiftsCell as $ws) {
-                                $h = (int) $ws->start_at->format('H');
-                                $p = $h < 12 ? 'manha' : ($h < 18 ? 'tarde' : 'noite');
-                                $periodMap[$p][] = $ws;
-                            }
-                            $periodNames = ['manha'=>'Manhã','tarde'=>'Tarde','noite'=>'Noite'];
-                            @endphp
-                            @if(!empty($periodMap))
-                            <div class="border-top mt-1 pt-1">
-                                @foreach(['manha','tarde','noite'] as $pk)
-                                @if(isset($periodMap[$pk]))
-                                @foreach($periodMap[$pk] as $ws)
-                                @if($isManager)
-                                <div class="d-flex align-items-center gap-1 mb-1">
-                                    <span class="text-muted flex-shrink-0" style="width:32px;font-size:.65rem">{{ $periodNames[$pk] }}:</span>
-                                    <select class="form-select form-select-sm p-0 px-1 station-select flex-grow-1"
-                                            data-shift="{{ $ws->id }}"
-                                            style="font-size:.7rem">
-                                        <option value="">—</option>
-                                        @foreach($stations as $st)
-                                        <option value="{{ $st->id }}"
-                                                {{ $ws->station_id == $st->id ? 'selected' : '' }}
-                                                style="color:{{ $st->color }}">{{ $st->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @elseif($ws->station)
-                                <div class="d-flex align-items-center gap-1 mb-1">
-                                    <span class="text-muted flex-shrink-0" style="width:32px;font-size:.65rem">{{ $periodNames[$pk] }}:</span>
-                                    <span class="badge rounded-pill"
-                                          style="background:{{ $ws->station->color }}20;color:{{ $ws->station->color }};border:1px solid {{ $ws->station->color }};font-size:.6rem">
-                                        {{ $ws->station->name }}
-                                    </span>
-                                </div>
-                                @endif
-                                @endforeach
-                                @endif
-                                @endforeach
-                            </div>
-                            @endif
-                            @endif
                         @endif
                     </td>
                     @endforeach
@@ -406,28 +360,6 @@ document.querySelectorAll('.time-input').forEach(input => {
     });
 });
 
-// ── Atualizar estação ────────────────────────────────────────────────────────
-document.querySelectorAll('.station-select').forEach(sel => {
-    sel.addEventListener('change', async function() {
-        const shiftId = this.dataset.shift;
-        const entry   = this.closest('.shift-entry');
-        const row     = this.closest('tr[data-user-id]');
-        const date    = this.closest('td[data-date]').dataset.date;
-        const s       = entry.querySelector('.start-input').value;
-        const e       = entry.querySelector('.end-input').value;
-
-        const body = new FormData();
-        body.append('_token',     CSRF);
-        body.append('_method',    'PUT');
-        body.append('station_id', this.value);
-        body.append('start_at',   date + ' ' + s + ':00');
-        body.append('end_at',     date + ' ' + e + ':00');
-        body.append('user_id',    row.dataset.userId);
-        body.append('type',       'work');
-
-        await fetch('/shifts/' + shiftId, {method:'POST', body});
-    });
-});
 
 // ── Apagar turno ─────────────────────────────────────────────────────────────
 async function deleteShift(id, btn) {
