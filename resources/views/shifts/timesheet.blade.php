@@ -64,7 +64,7 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
         <table class="table table-bordered table-sm mb-0" style="min-width:1100px">
             <thead class="table-dark">
                 <tr>
-                    <th style="width:160px">Funcionário</th>
+                    <th class="col-sticky-left" style="width:160px">Funcionário</th>
                     @foreach($days as $i => $day)
                     <th class="text-center {{ $day->toDateString() === $today ? 'table-primary text-dark' : '' }}"
                         style="min-width:155px">
@@ -78,7 +78,7 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
             <tbody>
                 @forelse($users as $usr)
                 <tr data-user-id="{{ $usr->id }}">
-                    <td class="fw-semibold align-middle small">{{ $usr->name }}</td>
+                    <td class="fw-semibold align-middle small col-sticky-left">{{ $usr->name }}</td>
 
                     @foreach($days as $day)
                     @php
@@ -194,78 +194,6 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
     </div>
 </div>
 
-{{-- ── Quadro de Alocação ────────────────────────────────────────────────────── --}}
-@php
-$boardPeriods = ['manha' => ['label'=>'Manhã','icon'=>'bi-sunrise','hint'=>'até 12h'],
-                 'tarde' => ['label'=>'Tarde','icon'=>'bi-sun',    'hint'=>'12h–18h'],
-                 'noite' => ['label'=>'Noite','icon'=>'bi-moon-stars','hint'=>'18h+']];
-@endphp
-
-<div class="d-flex align-items-center gap-2 mt-4 mb-2">
-    <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Quadro de Alocação</h5>
-    <span class="small fw-semibold text-muted">{{ $weekStart->format('d/m') }} – {{ $weekEnd->format('d/m/Y') }}</span>
-    <span class="ms-auto small text-muted" id="boardLastUpdate"></span>
-</div>
-
-@if($stations->isEmpty())
-<div class="alert alert-info py-2 small">
-    <i class="bi bi-info-circle me-1"></i>
-    Nenhuma estação cadastrada.
-    @if($isManager)
-        <a href="{{ route('stations.index') }}">Cadastre estações</a> para usar o quadro.
-    @endif
-</div>
-@else
-
-@foreach($boardPeriods as $periodKey => $period)
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
-        <i class="bi {{ $period['icon'] }} text-primary"></i>
-        <span class="fw-semibold small">{{ $period['label'] }}</span>
-        <small class="text-muted">({{ $period['hint'] }})</small>
-    </div>
-    <div class="card-body p-0" style="overflow-x:auto">
-        <table class="table table-bordered table-sm mb-0" style="min-width:700px">
-            <thead class="table-light">
-                <tr>
-                    <th style="width:110px" class="small">Estação</th>
-                    @foreach($days as $i => $day)
-                    <th class="text-center small {{ $day->toDateString() === $today ? 'table-primary' : '' }}">
-                        {{ $dayLabels[$i] }}<br>
-                        <span class="fw-normal opacity-75" style="font-size:.7rem">{{ $day->format('d/m') }}</span>
-                    </th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($stations as $station)
-                <tr>
-                    <td class="align-middle small fw-semibold">
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="rounded-circle flex-shrink-0"
-                                  style="width:9px;height:9px;display:inline-block;background:{{ $station->color }}"></span>
-                            {{ $station->name }}
-                        </span>
-                    </td>
-                    @foreach($days as $day)
-                    <td class="p-1 align-top {{ $day->toDateString() === $today ? 'table-primary bg-opacity-25' : '' }}"
-                        data-period="{{ $periodKey }}"
-                        data-station="{{ $station->id }}"
-                        data-date="{{ $day->toDateString() }}">
-                        <div class="board-cell d-flex flex-column gap-1">
-                            <span class="text-muted board-empty" style="font-size:.7rem">—</span>
-                        </div>
-                    </td>
-                    @endforeach
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-</div>
-@endforeach
-@endif
-
 {{-- ── Templates ────────────────────────────────────────────────────────────── --}}
 @if($isManager)
 <div class="d-flex align-items-center gap-2 mt-4 mb-2">
@@ -364,59 +292,6 @@ $boardPeriods = ['manha' => ['label'=>'Manhã','icon'=>'bi-sunrise','hint'=>'at�
     <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
 </div>
 @endif
-
-<script>
-(function () {
-    var BOARD_URL = '{{ route("shifts.board-data") }}?week={{ $weekParam }}&unit_id={{ $unitId ?? "" }}';
-    var POLL_MS   = 15000;
-    var lastUpd   = document.getElementById('boardLastUpdate');
-
-    function loadBoard() {
-        fetch(BOARD_URL)
-            .then(function(r){ return r.json(); })
-            .then(function(data) {
-                document.querySelectorAll('td[data-period]').forEach(function(td) {
-                    td.querySelector('.board-cell').innerHTML =
-                        '<span class="text-muted board-empty" style="font-size:.7rem">—</span>';
-                });
-                Object.entries(data).forEach(function([period, stations]) {
-                    Object.entries(stations).forEach(function([stationId, dates]) {
-                        Object.entries(dates).forEach(function([date, emps]) {
-                            var td = document.querySelector(
-                                'td[data-period="'+period+'"][data-station="'+stationId+'"][data-date="'+date+'"]'
-                            );
-                            if (!td) return;
-                            var cell = td.querySelector('.board-cell');
-                            cell.innerHTML = '';
-                            emps.forEach(function(emp) {
-                                var b = document.createElement('span');
-                                b.className   = 'badge bg-light text-dark border d-block text-start text-truncate';
-                                b.style.maxWidth = '100%';
-                                b.style.fontSize = '.65rem';
-                                b.title = emp.name;
-                                b.textContent = emp.name;
-                                cell.appendChild(b);
-                            });
-                        });
-                    });
-                });
-                if (lastUpd) {
-                    var n = new Date();
-                    lastUpd.textContent = 'Atualizado '
-                        + String(n.getHours()).padStart(2,'0') + ':'
-                        + String(n.getMinutes()).padStart(2,'0') + ':'
-                        + String(n.getSeconds()).padStart(2,'0');
-                }
-            })
-            .catch(function(){ if (lastUpd) lastUpd.textContent = 'Erro ao atualizar'; });
-    }
-
-    @if(!$stations->isEmpty())
-    loadBoard();
-    setInterval(loadBoard, POLL_MS);
-    @endif
-})();
-</script>
 
 @if($isManager)
 <script>
@@ -572,16 +447,23 @@ recalcTotals();
 @endif
 @push('styles')
 <style>
-.col-sticky-right {
-    position: sticky;
-    right: 0;
+.col-sticky-left {
+    position: sticky !important;
+    left: 0 !important;
     z-index: 2;
 }
-thead .col-sticky-right           { background: #212529; } /* table-dark */
-tbody .col-sticky-right           { background: #fff; }
-tfoot .col-sticky-right           { background: #e2e3e5; } /* table-secondary */
-/* Linha com hoje no thead */
-thead th.col-sticky-right.table-primary { background: #cfe2ff; color: #000; }
+thead .col-sticky-left            { background: #212529 !important; }
+tbody .col-sticky-left            { background: #fff !important; }
+tfoot .col-sticky-left            { background: #e2e3e5 !important; }
+
+.col-sticky-right {
+    position: sticky !important;
+    right: 0 !important;
+    z-index: 2;
+}
+thead .col-sticky-right           { background: #212529 !important; }
+tbody .col-sticky-right           { background: #fff !important; }
+tfoot .col-sticky-right           { background: #e2e3e5 !important; }
 </style>
 @endpush
 @endsection

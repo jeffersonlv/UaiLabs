@@ -128,8 +128,9 @@ class ShiftController extends Controller
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
 
-        $unitId   = $request->input('unit_id');
-        $stations = Station::where('active', true)->orderBy('order')->orderBy('name')->get();
+        $unitId    = $request->input('unit_id');
+        $stations  = Station::where('active', true)->orderBy('order')->orderBy('name')->get();
+        $isManager = $user->isManagerOrAbove();
 
         $days = collect();
         $d    = $weekStart->copy();
@@ -139,7 +140,7 @@ class ShiftController extends Controller
         }
 
         return view('shifts.board', compact(
-            'stations', 'days', 'units', 'unitId', 'weekParam', 'weekStart'
+            'stations', 'days', 'units', 'unitId', 'weekParam', 'weekStart', 'isManager'
         ));
     }
 
@@ -154,29 +155,41 @@ class ShiftController extends Controller
 
         $unitId = $request->input('unit_id');
 
-        $shifts = Shift::with(['user', 'station'])
+        $shifts = Shift::with(['user'])
             ->where('type', 'work')
-            ->whereNotNull('station_id')
             ->whereBetween('start_at', [$weekStart, $weekEnd])
             ->when($unitId, fn($q) => $q->where('unit_id', $unitId))
             ->when($unitIds !== null && !$unitId, fn($q) => $q->whereIn('unit_id', $unitIds))
             ->get();
 
-        // Agrupa: period → station_id → date → [user names]
+        // period → { assigned: {station_id → date → [emp]}, unassigned: {date → [emp]} }
         $data = [];
         foreach ($shifts as $shift) {
             $hour   = (int) $shift->start_at->format('H');
             $period = $hour < 12 ? 'manha' : ($hour < 18 ? 'tarde' : 'noite');
             $date   = $shift->start_at->toDateString();
-            $sid    = $shift->station_id;
+            $emp    = ['shift_id' => $shift->id, 'name' => $shift->user->name];
 
-            $data[$period][$sid][$date][] = [
-                'id'   => $shift->id,
-                'name' => $shift->user->name,
-            ];
+            if ($shift->station_id) {
+                $data[$period]['assigned'][$shift->station_id][$date][] = $emp;
+            } else {
+                $data[$period]['unassigned'][$date][] = $emp;
+            }
         }
 
         return response()->json($data);
+    }
+
+    public function assignStation(Request $request, Shift $shift)
+    {
+        abort_unless(auth()->user()->isManagerOrAbove(), 403);
+        if ($shift->unit_id) $this->authorizeUnit($shift->unit_id);
+
+        $request->validate(['station_id' => 'nullable|exists:stations,id']);
+        $shift->update(['station_id' => $request->station_id ?: null]);
+
+        AuditLogger::crud('shift.updated', 'shift', $shift->id, $shift->user->name);
+        return response()->json(['ok' => true]);
     }
 
     public function store(StoreShiftRequest $request)
@@ -311,7 +324,7 @@ class ShiftController extends Controller
             'start_date' => 'required|date',
             'conflict'   => 'in:skip,replace',
         ]);
-        $this->authorizeUnit($template->unit_id);
+        if ($template->unit_id) $this->authorizeUnit($template->unit_id);
 
         $start     = Carbon::parse($request->start_date)->startOfDay();
         $companyId = auth()->user()->company_id;
@@ -376,7 +389,7 @@ class ShiftController extends Controller
     public function updateTemplate(Request $request, ShiftTemplate $template)
     {
         abort_unless(auth()->user()->isManagerOrAbove(), 403);
-        $this->authorizeUnit($template->unit_id);
+        if ($template->unit_id) $this->authorizeUnit($template->unit_id);
         $request->validate([
             'name'   => 'required|string|max:100',
             'period' => 'required|in:weekly,biweekly,monthly',
@@ -394,7 +407,7 @@ class ShiftController extends Controller
     public function destroyTemplate(ShiftTemplate $template)
     {
         abort_unless(auth()->user()->isManagerOrAbove(), 403);
-        $this->authorizeUnit($template->unit_id);
+        if ($template->unit_id) $this->authorizeUnit($template->unit_id);
         $template->delete();
         return back()->with('success', 'Template removido.');
     }

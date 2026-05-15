@@ -260,8 +260,9 @@ $boardToday = \Carbon\Carbon::today()->toDateString();
                         '<span class="text-muted board-empty" style="font-size:.7rem">—</span>';
                 });
 
-                Object.entries(data).forEach(function([period, stations]) {
-                    Object.entries(stations).forEach(function([stationId, dates]) {
+                Object.entries(data).forEach(function([period, periodData]) {
+                    var assigned = periodData.assigned || {};
+                    Object.entries(assigned).forEach(function([stationId, dates]) {
                         Object.entries(dates).forEach(function([date, emps]) {
                             var td = document.querySelector(
                                 'td[data-period="'+period+'"][data-station="'+stationId+'"][data-date="'+date+'"]'

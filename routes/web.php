@@ -76,6 +76,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('/shifts/templates/{template}/apply', [ShiftController::class, 'applyTemplate'])->name('shifts.templates.apply');
             Route::put('/shifts/templates/{template}', [ShiftController::class, 'updateTemplate'])->name('shifts.templates.update');
             Route::delete('/shifts/templates/{template}', [ShiftController::class, 'destroyTemplate'])->name('shifts.templates.destroy');
+            Route::patch('/shifts/{shift}/assign-station', [ShiftController::class, 'assignStation'])->name('shifts.assign-station');
             Route::get('/shifts/{shift}', [ShiftController::class, 'show'])->name('shifts.show');
             Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
             Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
