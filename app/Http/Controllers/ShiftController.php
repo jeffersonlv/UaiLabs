@@ -9,60 +9,11 @@ use App\Models\Station;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\AuditLogger;
-use App\Services\TimeCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class ShiftController extends Controller
 {
-    public function index(Request $request)
-    {
-        $user    = auth()->user();
-        $unitIds = $user->visibleUnitIds();
-
-        $unitId = $request->input('unit_id');
-        $date   = $request->input('date', Carbon::today()->toDateString());
-        $view   = $request->input('view', 'day'); // day | week | month
-
-        $units = $unitIds !== null
-            ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
-            : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
-
-        if (! $unitId && $units->isNotEmpty()) {
-            $unitId = $units->first()->id;
-        }
-
-        $start = Carbon::parse($date)->startOfDay();
-        $end   = match ($view) {
-            'week'  => $start->copy()->endOfWeek(),
-            'month' => $start->copy()->endOfMonth(),
-            default => $start->copy()->endOfDay(),
-        };
-
-        $isManager = $user->isManagerOrAbove();
-
-        $shifts = Shift::with('user')
-            ->where('unit_id', $unitId)
-            ->when(! $isManager, fn($q) => $q->where('user_id', $user->id))
-            ->where(fn($q) => $q->whereBetween('start_at', [$start, $end])
-                ->orWhereBetween('end_at', [$start, $end]))
-            ->orderBy('start_at')
-            ->get();
-
-        $unitUsers = $unitId
-            ? User::whereHas('units', fn($q) => $q->where('units.id', $unitId))
-                ->where('company_id', $user->company_id)
-                ->where('active', true)
-                ->when(! $isManager, fn($q) => $q->where('id', $user->id))
-                ->orderBy('name')
-                ->get()
-            : collect();
-
-        $templates = ShiftTemplate::where('unit_id', $unitId)->orderBy('name')->get();
-
-        return view('shifts.index', compact('units', 'unitId', 'date', 'view', 'shifts', 'unitUsers', 'templates', 'start', 'end'));
-    }
-
     public function timesheet(Request $request)
     {
         $user    = auth()->user();
@@ -249,6 +200,15 @@ class ShiftController extends Controller
                 ->orWhereBetween('end_at', [$start, $end]))
             ->get();
 
+        // Usuários da unidade para o modal "Novo Turno"
+        $unitUsers = $unitId
+            ? User::whereHas('units', fn($q) => $q->where('units.id', $unitId))
+                ->where('company_id', $user->company_id)
+                ->where('active', true)
+                ->orderBy('name')
+                ->get()
+            : collect();
+
         // Dados do quadro de alocação (semana embutida)
         $boardWeek  = $request->input('board_week', Carbon::today()->format('o-\WW'));
         $boardStart = Carbon::now()->setISODate(...explode('-W', $boardWeek))->startOfWeek(Carbon::MONDAY);
@@ -260,33 +220,11 @@ class ShiftController extends Controller
 
         return view('shifts.calendar', compact(
             'units', 'unitId', 'month', 'shifts', 'start',
-            'boardWeek', 'boardStart', 'boardEnd', 'boardDays', 'stations'
+            'unitUsers', 'boardWeek', 'boardStart', 'boardEnd', 'boardDays', 'stations'
         ));
     }
 
-    /** Summary JSON: worked/scheduled hours per user for a period. */
-    public function summary(Request $request)
-    {
-        $request->validate(['unit_id' => 'required', 'start_date' => 'required|date', 'end_date' => 'required|date']);
-        $this->authorizeUnit((int) $request->unit_id);
 
-        $authUser = auth()->user();
-        $service  = new TimeCalculationService;
-        $users    = User::whereHas('units', fn($q) => $q->where('units.id', $request->unit_id))
-            ->where('company_id', $authUser->company_id)
-            ->where('active', true)
-            ->when(! $authUser->isManagerOrAbove(), fn($q) => $q->where('id', $authUser->id))
-            ->with('workSchedule')
-            ->get();
-
-        $result = $users->map(fn($u) => [
-            'user'       => $u->name,
-            'weekly_h'   => $u->workSchedule?->weekly_hours ?? 40,
-            'totals'     => $service->calculateForPeriod($u, $request->start_date, $request->end_date),
-        ]);
-
-        return response()->json($result);
-    }
 
     /** Templates listing. */
     public function templates(Request $request)

@@ -7,9 +7,11 @@
         <a href="{{ route('shifts.timesheet', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-table me-1"></i>Planilha
         </a>
-        <a href="{{ route('shifts.index', ['unit_id'=>$unitId]) }}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-bar-chart-steps me-1"></i>Timeline
-        </a>
+        @if(auth()->user()->isManagerOrAbove())
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#shiftModal">
+            <i class="bi bi-plus-lg me-1"></i>Turno
+        </button>
+        @endif
     </div>
 </div>
 <form method="GET" action="{{ route('shifts.calendar') }}" class="d-flex gap-2 mb-3">
@@ -187,6 +189,60 @@ $boardToday = \Carbon\Carbon::today()->toDateString();
     </div>
 </div>
 
+@if(auth()->user()->isManagerOrAbove())
+{{-- Modal: Novo Turno --}}
+<div class="modal fade" id="shiftModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Turno</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="shiftForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Funcionário</label>
+                        <select name="user_id" class="form-select" required>
+                            @foreach($unitUsers as $u)
+                                <option value="{{ $u->id }}">{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col">
+                            <label class="form-label">Início</label>
+                            <input type="datetime-local" name="start_at" class="form-control" required>
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Fim</label>
+                            <input type="datetime-local" name="end_at" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select name="type" class="form-select">
+                            @foreach(\App\Models\Shift::TYPES as $key => $info)
+                                <option value="{{ $key }}">{{ $info['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea name="notes" rows="2" class="form-control"></textarea>
+                    </div>
+                    <input type="hidden" name="unit_id" value="{{ $unitId }}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 @push('scripts')
 <script>
 // ── Quadro de alocação — polling ─────────────────────────────────────────────
@@ -271,6 +327,30 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (r) { return r.json(); })
         .then(function (d) { if (d.ok) window.location.reload(); });
     });
+
+    @if(auth()->user()->isManagerOrAbove())
+    var shiftForm = document.getElementById('shiftForm');
+    if (shiftForm) {
+        shiftForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var fd = new FormData(this);
+            var body = {};
+            fd.forEach(function (v, k) { body[k] = v; });
+            fetch('{{ route("shifts.store") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify(body)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
+                    window.location.reload();
+                }
+            });
+        });
+    }
+    @endif
 });
 </script>
 @endpush

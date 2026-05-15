@@ -65,13 +65,11 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         // ── Módulo: Escala de Funcionários ────────────────────────
         Route::middleware('module:shifts')->group(function () {
-            Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
             Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
             Route::get('/shifts/calendar', [ShiftController::class, 'calendar'])->name('shifts.calendar');
             Route::get('/shifts/timesheet', [ShiftController::class, 'timesheet'])->name('shifts.timesheet');
             Route::get('/shifts/board', [ShiftController::class, 'board'])->name('shifts.board');
             Route::get('/shifts/board-data', [ShiftController::class, 'boardData'])->name('shifts.board-data');
-            Route::get('/shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
             Route::get('/shifts/templates', [ShiftController::class, 'templates'])->name('shifts.templates.index');
             Route::post('/shifts/templates', [ShiftController::class, 'storeTemplate'])->name('shifts.templates.store');
             Route::post('/shifts/templates/{template}/apply', [ShiftController::class, 'applyTemplate'])->name('shifts.templates.apply');
