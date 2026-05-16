@@ -4,9 +4,11 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="bi bi-calendar-month me-2"></i>Escala — Calendário</h4>
     <div class="d-flex gap-2">
+        @if(auth()->user()->isManagerOrAbove())
         <a href="{{ route('shifts.timesheet', array_filter(['unit_id'=>$unitId])) }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-table me-1"></i>Planilha
         </a>
+        @endif
         @if(auth()->user()->isManagerOrAbove())
         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#shiftModal">
             <i class="bi bi-plus-lg me-1"></i>Turno
