@@ -75,6 +75,7 @@
                 </button>
                 <ul class="dropdown-menu shadow-lg border-0 rounded-3 py-2" style="min-width:230px">
                     @foreach($modules as $mod)
+                        @if(!($mod['menu'] ?? true)) @continue @endif
                         @php $hasAccess = $authUser->isSuperAdmin() || $moduleAccess->canAccess($authUser, $mod['key']); @endphp
 
                         @if($mod['key'] === 'rotinas')
@@ -255,6 +256,7 @@
         </div>
 
         @foreach($modules as $mod)
+            @if(!($mod['menu'] ?? true)) @continue @endif
             @php $hasAccess = $authUser->isSuperAdmin() || $moduleAccess->canAccess($authUser, $mod['key']); @endphp
 
             @if($mod['key'] === 'rotinas')

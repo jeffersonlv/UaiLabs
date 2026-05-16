@@ -13,10 +13,11 @@ $nextWeek  = \Carbon\Carbon::now()->setISODate(...explode('-W', $weekParam))->st
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h4 class="mb-0"><i class="bi bi-table me-2"></i>Planilha de Escala</h4>
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ route('shifts.board', array_filter(['week'=>$weekParam,'unit_id'=>$unitId])) }}"
-           class="btn btn-sm btn-outline-secondary">
+        @if($canBoard)
+        <a href="#board" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-grid-3x3-gap me-1"></i>Quadro
         </a>
+        @endif
         <a href="{{ route('shifts.calendar', array_filter(['unit_id'=>$unitId])) }}"
            class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-calendar-month me-1"></i>Calendário
@@ -401,6 +402,212 @@ function recalcTotals(){
 recalcTotals();
 </script>
 @endif
+{{-- ── Quadro de Alocação ───────────────────────────────────────────────────── --}}
+@if($canBoard)
+<div id="board" class="mt-4">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Quadro de Alocação</h5>
+        <small class="text-muted">{{ $weekStart->format('d/m') }} – {{ $weekEnd->format('d/m/Y') }}</small>
+    </div>
+
+    @if($stations->isEmpty())
+    <div class="alert alert-info py-2 small">
+        Nenhuma estação cadastrada.
+        @if($isManager) <a href="{{ route('stations.index') }}">Cadastre estações</a> para usar o quadro. @endif
+    </div>
+    @else
+    <div class="d-flex gap-3 align-items-start">
+
+        {{-- Lista de funcionários --}}
+        <div class="flex-shrink-0" style="width:160px">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header py-2 bg-white border-bottom">
+                    <small class="fw-semibold text-muted text-uppercase" style="font-size:.68rem;letter-spacing:.05em">Funcionários</small>
+                </div>
+                <div class="card-body p-2" id="employeeList" style="max-height:500px;overflow-y:auto">
+                    @foreach($users as $emp)
+                    @php $hasShift = $shifts->keys()->contains(fn($k) => str_starts_with($k, $emp->id . '_')); @endphp
+                    <div class="alloc-employee mb-1"
+                         data-user-id="{{ $emp->id }}"
+                         data-name="{{ $emp->name }}"
+                         draggable="{{ $isManager ? 'true' : 'false' }}">
+                        <span class="badge d-block text-start px-2 py-1 w-100
+                              {{ $hasShift ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-secondary-subtle text-secondary-emphasis border' }}"
+                              style="font-size:.7rem;cursor:{{ $isManager ? 'grab' : 'default' }};white-space:normal;word-break:break-word">
+                            {{ $emp->name }}
+                            @if($hasShift)<i class="bi bi-check2 ms-1 opacity-75"></i>@endif
+                        </span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted" style="font-size:.68rem">
+                    <i class="bi bi-check2 text-success"></i> tem turno na semana
+                </small>
+            </div>
+        </div>
+
+        {{-- Grade por período --}}
+        <div class="flex-grow-1 min-w-0">
+            @php
+            $boardPeriods = [
+                'manha' => ['label'=>'Manhã',  'hint'=>'até 12h',  'icon'=>'bi-sunrise'],
+                'tarde'  => ['label'=>'Tarde',  'hint'=>'12h–18h',  'icon'=>'bi-sun'],
+                'noite'  => ['label'=>'Noite',  'hint'=>'18h+',     'icon'=>'bi-moon-stars'],
+            ];
+            @endphp
+            @foreach($boardPeriods as $periodKey => $period)
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
+                    <i class="bi {{ $period['icon'] }} text-primary"></i>
+                    <span class="fw-semibold">{{ $period['label'] }}</span>
+                    <small class="text-muted">({{ $period['hint'] }})</small>
+                </div>
+                <div class="card-body p-0" style="overflow-x:auto">
+                    <table class="table table-bordered table-sm mb-0" style="table-layout:fixed;width:100%;min-width:600px">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:120px">Estação</th>
+                                @foreach($days as $i => $day)
+                                <th class="text-center {{ $day->toDateString() === $today ? 'table-primary' : '' }}" style="min-width:100px">
+                                    {{ $dayLabels[$i] }}&nbsp;{{ $day->format('d/m') }}
+                                </th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($stations as $station)
+                            <tr>
+                                <td class="align-middle fw-semibold small">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="rounded-circle d-inline-block flex-shrink-0"
+                                              style="width:10px;height:10px;background:{{ $station->color }}"></span>
+                                        {{ $station->name }}
+                                    </span>
+                                </td>
+                                @foreach($days as $day)
+                                @php $cellAllocs = $boardAllocations[$periodKey][$station->id][$day->toDateString()] ?? []; @endphp
+                                <td class="{{ $day->toDateString() === $today ? 'table-primary bg-opacity-25' : '' }} p-1 align-top alloc-drop-cell"
+                                    data-period="{{ $periodKey }}"
+                                    data-station="{{ $station->id }}"
+                                    data-date="{{ $day->toDateString() }}"
+                                    style="min-height:44px">
+                                    <div class="alloc-cell-content d-flex flex-column gap-1">
+                                        @forelse($cellAllocs as $alloc)
+                                        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle d-flex align-items-center justify-content-between alloc-badge"
+                                              data-alloc-id="{{ $alloc['id'] }}"
+                                              style="font-size:.65rem;max-width:100%">
+                                            <span class="text-truncate" style="min-width:0">{{ $alloc['name'] }}</span>
+                                            @if($isManager)
+                                            <button class="alloc-remove-btn btn btn-link p-0 ms-1 text-danger lh-1 flex-shrink-0"
+                                                    data-alloc-id="{{ $alloc['id'] }}"
+                                                    style="font-size:.75rem">×</button>
+                                            @endif
+                                        </span>
+                                        @empty
+                                        <span class="text-muted small fst-italic alloc-empty">—</span>
+                                        @endforelse
+                                    </div>
+                                </td>
+                                @endforeach
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+</div>
+@endif
+
+@if($canBoard && $isManager)
+<script>
+const ALLOC_STORE_URL   = '{{ route("board-allocations.store") }}';
+const ALLOC_DESTROY_URL = '{{ route("board-allocations.destroy", ":id") }}';
+const ALLOC_UNIT_ID     = '{{ $unitId ?? "" }}';
+let allocDragUserId = null, allocDragUserName = null;
+
+document.querySelectorAll('.alloc-employee').forEach(el => {
+    el.addEventListener('dragstart', function(e) {
+        allocDragUserId   = this.dataset.userId;
+        allocDragUserName = this.dataset.name;
+        e.dataTransfer.effectAllowed = 'copy';
+    });
+    el.addEventListener('dragend', function() {
+        allocDragUserId = allocDragUserName = null;
+    });
+});
+
+document.querySelectorAll('.alloc-drop-cell').forEach(td => {
+    td.addEventListener('dragover', e => {
+        if (!allocDragUserId) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        td.classList.add('alloc-drop-hover');
+    });
+    td.addEventListener('dragleave', e => {
+        if (!td.contains(e.relatedTarget)) td.classList.remove('alloc-drop-hover');
+    });
+    td.addEventListener('drop', async function(e) {
+        e.preventDefault();
+        td.classList.remove('alloc-drop-hover');
+        if (!allocDragUserId) return;
+
+        const body = new FormData();
+        body.append('_token',     CSRF);
+        body.append('user_id',    allocDragUserId);
+        body.append('station_id', this.dataset.station);
+        body.append('date',       this.dataset.date);
+        body.append('period',     this.dataset.period);
+        if (ALLOC_UNIT_ID) body.append('unit_id', ALLOC_UNIT_ID);
+
+        const res  = await fetch(ALLOC_STORE_URL, {method: 'POST', body});
+        const json = await res.json();
+        if (json.ok) addAllocBadge(this, json.id, json.name);
+    });
+});
+
+function addAllocBadge(td, allocId, name) {
+    const content = td.querySelector('.alloc-cell-content');
+    td.querySelector('.alloc-empty')?.remove();
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-primary-subtle text-primary-emphasis border border-primary-subtle d-flex align-items-center justify-content-between alloc-badge';
+    badge.dataset.allocId = allocId;
+    badge.style.cssText = 'font-size:.65rem;max-width:100%';
+    badge.innerHTML = `<span class="text-truncate" style="min-width:0">${name}</span>`
+        + `<button class="alloc-remove-btn btn btn-link p-0 ms-1 text-danger lh-1 flex-shrink-0" data-alloc-id="${allocId}" style="font-size:.75rem">×</button>`;
+    badge.querySelector('.alloc-remove-btn').addEventListener('click', function() {
+        removeAllocBadge(this.dataset.allocId, this.closest('.alloc-badge'));
+    });
+    content.appendChild(badge);
+}
+
+async function removeAllocBadge(id, badgeEl) {
+    const body = new FormData();
+    body.append('_token',  CSRF);
+    body.append('_method', 'DELETE');
+    const res = await fetch(ALLOC_DESTROY_URL.replace(':id', id), {method: 'POST', body});
+    if (res.ok) {
+        const content = badgeEl.closest('.alloc-cell-content');
+        badgeEl.remove();
+        if (content && !content.querySelector('.alloc-badge')) {
+            content.innerHTML = '<span class="text-muted small fst-italic alloc-empty">—</span>';
+        }
+    }
+}
+
+document.querySelectorAll('.alloc-remove-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        removeAllocBadge(this.dataset.allocId, this.closest('.alloc-badge'));
+    });
+});
+</script>
+@endif
+
 @push('styles')
 <style>
 .col-sticky-left {
@@ -420,6 +627,10 @@ tfoot .col-sticky-left            { background: #e2e3e5 !important; }
 thead .col-sticky-right           { background: #212529 !important; }
 tbody .col-sticky-right           { background: #fff !important; }
 tfoot .col-sticky-right           { background: #e2e3e5 !important; }
+
+.alloc-drop-cell.alloc-drop-hover { background: #cfe2ff !important; outline: 2px dashed #0d6efd; }
+.alloc-employee[draggable="true"] { cursor: grab; }
+.alloc-employee[draggable="true"]:active span { opacity: .6; }
 </style>
 @endpush
 @endsection

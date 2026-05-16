@@ -47,6 +47,15 @@ class ModuleRegistry
                 'route'       => 'estoque.index',
                 'active'      => true,
             ],
+            [
+                'key'         => 'board_allocation',
+                'name'        => 'Quadro de Alocação',
+                'description' => 'Alocação visual de funcionários por estação no quadro semanal',
+                'icon'        => 'bi-grid-3x3-gap',
+                'route'       => null,
+                'menu'        => false,
+                'active'      => true,
+            ],
         ];
     }
 

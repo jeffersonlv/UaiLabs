@@ -9,6 +9,7 @@ use App\Http\Controllers\ClockController;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\PurchaseItemController;
 use App\Http\Controllers\PurchaseRequestController;
+use App\Http\Controllers\BoardAllocationController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\SubcategoryController;
@@ -92,6 +93,13 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::put('/stations/{station}', [StationController::class, 'update'])->name('stations.update');
             Route::delete('/stations/{station}', [StationController::class, 'destroy'])->name('stations.destroy');
             Route::post('/stations/reorder', [StationController::class, 'reorder'])->name('stations.reorder');
+        });
+
+        // ── Módulo: Quadro de Alocação ────────────────────────────
+        Route::middleware('module:board_allocation')->group(function () {
+            Route::get('/board-allocations', [BoardAllocationController::class, 'index'])->name('board-allocations.index');
+            Route::post('/board-allocations', [BoardAllocationController::class, 'store'])->name('board-allocations.store');
+            Route::delete('/board-allocations/{boardAllocation}', [BoardAllocationController::class, 'destroy'])->name('board-allocations.destroy');
         });
 
         // ── Módulo: Ponto ─────────────────────────────────────────

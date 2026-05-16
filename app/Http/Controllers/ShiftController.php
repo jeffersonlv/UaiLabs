@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreShiftRequest;
+use App\Models\BoardAllocation;
 use App\Models\Shift;
 use App\Models\ShiftTemplate;
 use App\Models\Station;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\ModuleAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -65,10 +67,29 @@ class ShiftController extends Controller
 
         $isManager = $user->isManagerOrAbove();
         $templates = ShiftTemplate::where('company_id', $user->company_id)->orderBy('name')->get();
+        $stations  = Station::where('active', true)->orderBy('order')->orderBy('name')->get();
+        $canBoard  = app(ModuleAccessService::class)->canAccess($user, 'board_allocation');
+
+        $boardAllocations = [];
+        if ($canBoard) {
+            $allocs = BoardAllocation::with(['user'])
+                ->where('company_id', $user->company_id)
+                ->whereBetween('date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+                ->when($unitId, fn($q) => $q->where('unit_id', $unitId))
+                ->get();
+            foreach ($allocs as $alloc) {
+                $boardAllocations[$alloc->period][$alloc->station_id][$alloc->date->toDateString()][] = [
+                    'id'      => $alloc->id,
+                    'name'    => $alloc->user->name,
+                    'user_id' => $alloc->user_id,
+                ];
+            }
+        }
 
         return view('shifts.timesheet', compact(
             'users', 'days', 'shifts', 'templates',
-            'units', 'unitId', 'weekParam', 'weekStart', 'weekEnd', 'isManager'
+            'units', 'unitId', 'weekParam', 'weekStart', 'weekEnd', 'isManager',
+            'stations', 'canBoard', 'boardAllocations'
         ));
     }
 
