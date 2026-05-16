@@ -29,7 +29,10 @@ class ShiftController extends Controller
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
 
-        $unitId = $request->input('unit_id');
+        $unitId = $request->input('unit_id') ? (int) $request->input('unit_id') : null;
+        if ($unitId) {
+            abort_unless($units->contains('id', $unitId), 403);
+        }
 
         // Usuários visíveis
         $usersQuery = User::where('company_id', $user->company_id)
@@ -123,7 +126,10 @@ class ShiftController extends Controller
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
 
-        $unitId    = $request->input('unit_id');
+        $unitId = $request->input('unit_id') ? (int) $request->input('unit_id') : null;
+        if ($unitId) {
+            abort_unless($units->contains('id', $unitId), 403);
+        }
         $stations  = Station::where('active', true)->orderBy('order')->orderBy('name')->get();
         $isManager = $user->isManagerOrAbove();
         $weekEnd   = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
@@ -149,7 +155,11 @@ class ShiftController extends Controller
         $weekStart = Carbon::now()->setISODate(...explode('-W', $weekParam))->startOfWeek(Carbon::MONDAY);
         $weekEnd   = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
 
-        $unitId = $request->input('unit_id');
+        $unitId = $request->input('unit_id') ? (int) $request->input('unit_id') : null;
+        if ($unitId) {
+            $this->authorizeUnit($unitId);
+            abort_unless(Unit::where('id', $unitId)->where('company_id', $user->company_id)->where('active', true)->exists(), 403);
+        }
 
         $shifts = Shift::with(['user'])
             ->where('type', 'work')
@@ -232,12 +242,16 @@ class ShiftController extends Controller
     {
         $user    = auth()->user();
         $unitIds = $user->visibleUnitIds();
-        $unitId  = $request->input('unit_id');
+        $unitId  = $request->input('unit_id') ? (int) $request->input('unit_id') : null;
         $month   = $request->input('month', Carbon::today()->format('Y-m'));
 
         $units = $unitIds !== null
             ? Unit::whereIn('id', $unitIds)->where('active', true)->orderBy('name')->get()
             : Unit::where('company_id', $user->company_id)->where('active', true)->orderBy('name')->get();
+
+        if ($unitId) {
+            abort_unless($units->contains('id', $unitId), 403);
+        }
 
         if (! $unitId && $units->isNotEmpty()) {
             $unitId = $units->first()->id;
