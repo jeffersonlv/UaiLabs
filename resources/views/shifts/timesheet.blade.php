@@ -728,11 +728,11 @@ function showPicker(td, anchor) {
     const rect = anchor.getBoundingClientRect();
     const pw   = picker.offsetWidth  || 195;
     const ph   = picker.offsetHeight || 280;
-    let top  = rect.bottom + window.scrollY + 4;
-    let left = rect.left   + window.scrollX;
+    let top  = rect.bottom + 4;
+    let left = rect.left;
 
     if (left + pw > window.innerWidth  - 8) left = window.innerWidth  - pw - 8;
-    if (top  + ph > window.innerHeight + window.scrollY - 8) top = rect.top + window.scrollY - ph - 4;
+    if (top  + ph > window.innerHeight - 8) top  = rect.top - ph - 4;
 
     picker.style.top  = Math.max(8, top)  + 'px';
     picker.style.left = Math.max(8, left) + 'px';
