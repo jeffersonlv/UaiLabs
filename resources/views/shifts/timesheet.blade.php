@@ -404,8 +404,16 @@ recalcTotals();
 @endif
 {{-- ── Quadro de Alocação ───────────────────────────────────────────────────── --}}
 @if($canBoard)
+@php
+$usersWithShift = $shifts->keys()->map(fn($k) => (int)explode('_',$k)[0])->unique()->flip()->toArray();
+$boardPeriods = [
+    'manha' => ['label'=>'Manhã', 'hint'=>'até 12h', 'icon'=>'bi-sunrise'],
+    'tarde'  => ['label'=>'Tarde', 'hint'=>'12h–18h', 'icon'=>'bi-sun'],
+    'noite'  => ['label'=>'Noite', 'hint'=>'18h+',    'icon'=>'bi-moon-stars'],
+];
+@endphp
 <div id="board" class="mt-4">
-    <div class="d-flex align-items-center gap-2 mb-2">
+    <div class="d-flex align-items-center gap-2 mb-3">
         <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Quadro de Alocação</h5>
         <small class="text-muted">{{ $weekStart->format('d/m') }} – {{ $weekEnd->format('d/m/Y') }}</small>
     </div>
@@ -416,47 +424,60 @@ recalcTotals();
         @if($isManager) <a href="{{ route('stations.index') }}">Cadastre estações</a> para usar o quadro. @endif
     </div>
     @else
+
+    {{-- Mobile: painel de funcionários collapsível --}}
+    <div class="d-md-none mb-3">
+        <button class="btn btn-sm btn-outline-secondary w-100 text-start d-flex align-items-center"
+                data-bs-toggle="collapse" data-bs-target="#empPanelMobile" aria-expanded="false">
+            <i class="bi bi-people me-2"></i><span>Funcionários</span>
+            <i class="bi bi-chevron-down ms-auto"></i>
+        </button>
+        <div class="collapse" id="empPanelMobile">
+            <div class="border rounded p-2 mt-1 bg-white">
+                <div class="d-flex flex-wrap gap-1 mb-1">
+                    @foreach($users as $emp)
+                    <span class="alloc-employee badge {{ isset($usersWithShift[$emp->id]) ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-secondary-subtle text-secondary-emphasis border' }}"
+                          data-user-id="{{ $emp->id }}" data-name="{{ $emp->name }}"
+                          draggable="{{ $isManager ? 'true' : 'false' }}"
+                          style="font-size:.72rem;cursor:{{ $isManager ? 'grab' : 'default' }}">
+                        {{ $emp->name }}@if(isset($usersWithShift[$emp->id])) <i class="bi bi-check2"></i>@endif
+                    </span>
+                    @endforeach
+                </div>
+                <small class="text-muted" style="font-size:.68rem"><i class="bi bi-check2 text-success"></i> tem turno na semana</small>
+            </div>
+        </div>
+    </div>
+
     <div class="d-flex gap-3 align-items-start">
 
-        {{-- Lista de funcionários --}}
-        <div class="flex-shrink-0" style="width:160px">
+        {{-- Desktop: painel lateral --}}
+        <div class="flex-shrink-0 d-none d-md-block" style="width:155px">
             <div class="card border-0 shadow-sm">
                 <div class="card-header py-2 bg-white border-bottom">
                     <small class="fw-semibold text-muted text-uppercase" style="font-size:.68rem;letter-spacing:.05em">Funcionários</small>
                 </div>
-                <div class="card-body p-2" id="employeeList" style="max-height:500px;overflow-y:auto">
+                <div class="card-body p-2" style="max-height:480px;overflow-y:auto">
                     @foreach($users as $emp)
-                    @php $hasShift = $shifts->keys()->contains(fn($k) => str_starts_with($k, $emp->id . '_')); @endphp
-                    <div class="alloc-employee mb-1"
-                         data-user-id="{{ $emp->id }}"
-                         data-name="{{ $emp->name }}"
+                    <div class="alloc-employee mb-1" data-user-id="{{ $emp->id }}" data-name="{{ $emp->name }}"
                          draggable="{{ $isManager ? 'true' : 'false' }}">
                         <span class="badge d-block text-start px-2 py-1 w-100
-                              {{ $hasShift ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-secondary-subtle text-secondary-emphasis border' }}"
+                              {{ isset($usersWithShift[$emp->id]) ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-secondary-subtle text-secondary-emphasis border' }}"
                               style="font-size:.7rem;cursor:{{ $isManager ? 'grab' : 'default' }};white-space:normal;word-break:break-word">
                             {{ $emp->name }}
-                            @if($hasShift)<i class="bi bi-check2 ms-1 opacity-75"></i>@endif
+                            @if(isset($usersWithShift[$emp->id]))<i class="bi bi-check2 ms-1 opacity-75"></i>@endif
                         </span>
                     </div>
                     @endforeach
                 </div>
             </div>
-            <div class="mt-2">
-                <small class="text-muted" style="font-size:.68rem">
-                    <i class="bi bi-check2 text-success"></i> tem turno na semana
-                </small>
-            </div>
+            <small class="text-muted d-block mt-1" style="font-size:.68rem">
+                <i class="bi bi-check2 text-success"></i> tem turno na semana
+            </small>
         </div>
 
-        {{-- Grade por período --}}
-        <div class="flex-grow-1 min-w-0">
-            @php
-            $boardPeriods = [
-                'manha' => ['label'=>'Manhã',  'hint'=>'até 12h',  'icon'=>'bi-sunrise'],
-                'tarde'  => ['label'=>'Tarde',  'hint'=>'12h–18h',  'icon'=>'bi-sun'],
-                'noite'  => ['label'=>'Noite',  'hint'=>'18h+',     'icon'=>'bi-moon-stars'],
-            ];
-            @endphp
+        {{-- Tabelas por período --}}
+        <div class="flex-grow-1" style="min-width:0;overflow:hidden">
             @foreach($boardPeriods as $periodKey => $period)
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
@@ -465,12 +486,12 @@ recalcTotals();
                     <small class="text-muted">({{ $period['hint'] }})</small>
                 </div>
                 <div class="card-body p-0" style="overflow-x:auto">
-                    <table class="table table-bordered table-sm mb-0" style="table-layout:fixed;width:100%;min-width:600px">
+                    <table class="table table-bordered table-sm mb-0 board-table" style="min-width:480px">
                         <thead class="table-light">
                             <tr>
-                                <th style="width:120px">Estação</th>
+                                <th class="board-col-sticky" style="min-width:90px">Estação</th>
                                 @foreach($days as $i => $day)
-                                <th class="text-center {{ $day->toDateString() === $today ? 'table-primary' : '' }}" style="min-width:100px">
+                                <th class="text-center {{ $day->toDateString() === $today ? 'table-primary' : '' }}" style="min-width:88px">
                                     {{ $dayLabels[$i] }}&nbsp;{{ $day->format('d/m') }}
                                 </th>
                                 @endforeach
@@ -479,10 +500,10 @@ recalcTotals();
                         <tbody>
                             @foreach($stations as $station)
                             <tr>
-                                <td class="align-middle fw-semibold small">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="rounded-circle d-inline-block flex-shrink-0"
-                                              style="width:10px;height:10px;background:{{ $station->color }}"></span>
+                                <td class="board-col-sticky align-middle fw-semibold small">
+                                    <span class="d-flex align-items-center gap-1">
+                                        <span class="rounded-circle flex-shrink-0"
+                                              style="width:8px;height:8px;display:inline-block;background:{{ $station->color }}"></span>
                                         {{ $station->name }}
                                     </span>
                                 </td>
@@ -491,13 +512,15 @@ recalcTotals();
                                 <td class="{{ $day->toDateString() === $today ? 'table-primary bg-opacity-25' : '' }} p-1 align-top alloc-drop-cell"
                                     data-period="{{ $periodKey }}"
                                     data-station="{{ $station->id }}"
-                                    data-date="{{ $day->toDateString() }}"
-                                    style="min-height:44px">
+                                    data-date="{{ $day->toDateString() }}">
                                     <div class="alloc-cell-content d-flex flex-column gap-1">
                                         @forelse($cellAllocs as $alloc)
                                         <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle d-flex align-items-center justify-content-between alloc-badge"
                                               data-alloc-id="{{ $alloc['id'] }}"
-                                              style="font-size:.65rem;max-width:100%">
+                                              data-user-id="{{ $alloc['user_id'] }}"
+                                              data-name="{{ $alloc['name'] }}"
+                                              draggable="{{ $isManager ? 'true' : 'false' }}"
+                                              style="font-size:.65rem;max-width:100%;cursor:{{ $isManager ? 'grab' : 'default' }}">
                                             <span class="text-truncate" style="min-width:0">{{ $alloc['name'] }}</span>
                                             @if($isManager)
                                             <button class="alloc-remove-btn btn btn-link p-0 ms-1 text-danger lh-1 flex-shrink-0"
@@ -508,6 +531,16 @@ recalcTotals();
                                         @empty
                                         <span class="text-muted small fst-italic alloc-empty">—</span>
                                         @endforelse
+                                        @if($isManager)
+                                        <button class="alloc-add-btn btn btn-outline-secondary btn-sm p-0 mt-1"
+                                                data-period="{{ $periodKey }}"
+                                                data-station="{{ $station->id }}"
+                                                data-date="{{ $day->toDateString() }}"
+                                                title="Adicionar funcionário"
+                                                style="font-size:.65rem;line-height:1.5;border-style:dashed">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                        @endif
                                     </div>
                                 </td>
                                 @endforeach
@@ -520,7 +553,32 @@ recalcTotals();
             @endforeach
         </div>
     </div>
+
+    {{-- Picker flutuante (manager only) --}}
+    @if($isManager)
+    <div id="allocPicker" class="card shadow-lg border p-0"
+         style="display:none;position:fixed;z-index:1060;min-width:175px;max-width:210px">
+        <div class="card-body p-2">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <small class="fw-semibold text-muted">Adicionar funcionário</small>
+                <button id="allocPickerClose" class="btn-close" style="font-size:.6rem"></button>
+            </div>
+            <input type="text" id="allocPickerSearch" class="form-control form-control-sm mb-1" placeholder="Buscar...">
+            <div id="allocPickerList" style="max-height:210px;overflow-y:auto">
+                @foreach($users as $emp)
+                <button class="btn btn-sm text-start w-100 py-1 px-2 rounded alloc-pick-btn
+                               {{ isset($usersWithShift[$emp->id]) ? 'text-success fw-semibold' : 'text-secondary' }}"
+                        data-user-id="{{ $emp->id }}" data-name="{{ $emp->name }}">
+                    {{ $emp->name }}
+                    @if(isset($usersWithShift[$emp->id]))<i class="bi bi-check2 ms-1 opacity-75" style="font-size:.7rem"></i>@endif
+                </button>
+                @endforeach
+            </div>
+        </div>
+    </div>
     @endif
+
+    @endif {{-- /stations --}}
 </div>
 @endif
 
@@ -529,24 +587,48 @@ recalcTotals();
 const ALLOC_STORE_URL   = '{{ route("board-allocations.store") }}';
 const ALLOC_DESTROY_URL = '{{ route("board-allocations.destroy", ":id") }}';
 const ALLOC_UNIT_ID     = '{{ $unitId ?? "" }}';
-let allocDragUserId = null, allocDragUserName = null;
 
+// ── Estado do drag ──────────────────────────────────────────────────────────
+// type: 'employee' | 'badge'
+let allocDrag = null;
+
+// ── Drag dos funcionários (painel) ──────────────────────────────────────────
 document.querySelectorAll('.alloc-employee').forEach(el => {
     el.addEventListener('dragstart', function(e) {
-        allocDragUserId   = this.dataset.userId;
-        allocDragUserName = this.dataset.name;
+        allocDrag = {type:'employee', userId: this.dataset.userId, name: this.dataset.name};
         e.dataTransfer.effectAllowed = 'copy';
     });
-    el.addEventListener('dragend', function() {
-        allocDragUserId = allocDragUserName = null;
-    });
+    el.addEventListener('dragend', () => { allocDrag = null; });
 });
 
-document.querySelectorAll('.alloc-drop-cell').forEach(td => {
+// ── Drag dos badges (mover entre células) ────────────────────────────────────
+function wireBadgeDrag(badge) {
+    if (badge.getAttribute('draggable') !== 'true') return;
+    badge.addEventListener('dragstart', function(e) {
+        e.stopPropagation();
+        allocDrag = {
+            type:     'badge',
+            userId:   this.dataset.userId,
+            name:     this.dataset.name,
+            allocId:  this.dataset.allocId,
+            sourceTd: this.closest('.alloc-drop-cell'),
+        };
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => { this.style.opacity = '.35'; }, 0);
+    });
+    badge.addEventListener('dragend', function() {
+        this.style.opacity = '';
+        allocDrag = null;
+    });
+}
+document.querySelectorAll('.alloc-badge').forEach(wireBadgeDrag);
+
+// ── Células de drop ──────────────────────────────────────────────────────────
+function wireDropCell(td) {
     td.addEventListener('dragover', e => {
-        if (!allocDragUserId) return;
+        if (!allocDrag) return;
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
+        e.dataTransfer.dropEffect = allocDrag.type === 'badge' ? 'move' : 'copy';
         td.classList.add('alloc-drop-hover');
     });
     td.addEventListener('dragleave', e => {
@@ -554,56 +636,155 @@ document.querySelectorAll('.alloc-drop-cell').forEach(td => {
     });
     td.addEventListener('drop', async function(e) {
         e.preventDefault();
-        td.classList.remove('alloc-drop-hover');
-        if (!allocDragUserId) return;
+        this.classList.remove('alloc-drop-hover');
+        if (!allocDrag) return;
+        if (allocDrag.type === 'badge' && allocDrag.sourceTd === this) return;
 
         const body = new FormData();
         body.append('_token',     CSRF);
-        body.append('user_id',    allocDragUserId);
+        body.append('user_id',    allocDrag.userId);
         body.append('station_id', this.dataset.station);
         body.append('date',       this.dataset.date);
         body.append('period',     this.dataset.period);
         if (ALLOC_UNIT_ID) body.append('unit_id', ALLOC_UNIT_ID);
 
-        const res  = await fetch(ALLOC_STORE_URL, {method: 'POST', body});
+        const res  = await fetch(ALLOC_STORE_URL, {method:'POST', body});
         const json = await res.json();
-        if (json.ok) addAllocBadge(this, json.id, json.name);
-    });
-});
+        if (!json.ok) return;
 
-function addAllocBadge(td, allocId, name) {
+        if (allocDrag.type === 'badge' && allocDrag.sourceTd) {
+            const oldBadge = allocDrag.sourceTd.querySelector(`.alloc-badge[data-alloc-id="${allocDrag.allocId}"]`);
+            if (oldBadge) {
+                const db = new FormData();
+                db.append('_token', CSRF); db.append('_method', 'DELETE');
+                await fetch(ALLOC_DESTROY_URL.replace(':id', allocDrag.allocId), {method:'POST', body:db});
+                removeBadgeFromDom(oldBadge);
+            }
+        }
+        addAllocBadge(this, json.id, json.name, allocDrag.userId);
+    });
+}
+document.querySelectorAll('.alloc-drop-cell').forEach(wireDropCell);
+
+// ── Adicionar badge na célula ────────────────────────────────────────────────
+function addAllocBadge(td, allocId, name, userId) {
     const content = td.querySelector('.alloc-cell-content');
     td.querySelector('.alloc-empty')?.remove();
     const badge = document.createElement('span');
     badge.className = 'badge bg-primary-subtle text-primary-emphasis border border-primary-subtle d-flex align-items-center justify-content-between alloc-badge';
     badge.dataset.allocId = allocId;
-    badge.style.cssText = 'font-size:.65rem;max-width:100%';
+    badge.dataset.userId  = userId;
+    badge.dataset.name    = name;
+    badge.draggable = true;
+    badge.style.cssText = 'font-size:.65rem;max-width:100%;cursor:grab';
     badge.innerHTML = `<span class="text-truncate" style="min-width:0">${name}</span>`
         + `<button class="alloc-remove-btn btn btn-link p-0 ms-1 text-danger lh-1 flex-shrink-0" data-alloc-id="${allocId}" style="font-size:.75rem">×</button>`;
-    badge.querySelector('.alloc-remove-btn').addEventListener('click', function() {
+    badge.querySelector('.alloc-remove-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
         removeAllocBadge(this.dataset.allocId, this.closest('.alloc-badge'));
     });
-    content.appendChild(badge);
+    wireBadgeDrag(badge);
+    const addBtn = content.querySelector('.alloc-add-btn');
+    content.insertBefore(badge, addBtn);
+}
+
+function removeBadgeFromDom(badgeEl) {
+    const content = badgeEl.closest('.alloc-cell-content');
+    badgeEl.remove();
+    if (content && !content.querySelector('.alloc-badge')) {
+        const empty = document.createElement('span');
+        empty.className = 'text-muted small fst-italic alloc-empty';
+        empty.textContent = '—';
+        content.insertBefore(empty, content.querySelector('.alloc-add-btn'));
+    }
 }
 
 async function removeAllocBadge(id, badgeEl) {
     const body = new FormData();
-    body.append('_token',  CSRF);
-    body.append('_method', 'DELETE');
-    const res = await fetch(ALLOC_DESTROY_URL.replace(':id', id), {method: 'POST', body});
-    if (res.ok) {
-        const content = badgeEl.closest('.alloc-cell-content');
-        badgeEl.remove();
-        if (content && !content.querySelector('.alloc-badge')) {
-            content.innerHTML = '<span class="text-muted small fst-italic alloc-empty">—</span>';
-        }
-    }
+    body.append('_token', CSRF); body.append('_method', 'DELETE');
+    const res = await fetch(ALLOC_DESTROY_URL.replace(':id', id), {method:'POST', body});
+    if (res.ok) removeBadgeFromDom(badgeEl);
 }
 
 document.querySelectorAll('.alloc-remove-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
         removeAllocBadge(this.dataset.allocId, this.closest('.alloc-badge'));
     });
+});
+
+// ── Picker flutuante ──────────────────────────────────────────────────────────
+let pickerTargetTd = null;
+const picker       = document.getElementById('allocPicker');
+const pickerSearch = document.getElementById('allocPickerSearch');
+const pickerList   = document.getElementById('allocPickerList');
+
+function showPicker(td, anchor) {
+    pickerTargetTd = td;
+    pickerSearch.value = '';
+    pickerList.querySelectorAll('.alloc-pick-btn').forEach(b => b.style.display = '');
+    picker.style.display = 'block';
+
+    const rect = anchor.getBoundingClientRect();
+    const pw   = picker.offsetWidth  || 195;
+    const ph   = picker.offsetHeight || 280;
+    let top  = rect.bottom + window.scrollY + 4;
+    let left = rect.left   + window.scrollX;
+
+    if (left + pw > window.innerWidth  - 8) left = window.innerWidth  - pw - 8;
+    if (top  + ph > window.innerHeight + window.scrollY - 8) top = rect.top + window.scrollY - ph - 4;
+
+    picker.style.top  = Math.max(8, top)  + 'px';
+    picker.style.left = Math.max(8, left) + 'px';
+    pickerSearch.focus();
+}
+
+function closePicker() {
+    picker.style.display = 'none';
+    pickerTargetTd = null;
+}
+
+document.querySelectorAll('.alloc-add-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const td = this.closest('.alloc-drop-cell');
+        if (pickerTargetTd === td && picker.style.display !== 'none') { closePicker(); return; }
+        showPicker(td, this);
+    });
+});
+
+document.getElementById('allocPickerClose').addEventListener('click', closePicker);
+
+pickerSearch.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    pickerList.querySelectorAll('.alloc-pick-btn').forEach(b => {
+        b.style.display = b.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+
+pickerList.querySelectorAll('.alloc-pick-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        if (!pickerTargetTd) return;
+        const td = pickerTargetTd;
+        closePicker();
+
+        const body = new FormData();
+        body.append('_token',     CSRF);
+        body.append('user_id',    this.dataset.userId);
+        body.append('station_id', td.dataset.station);
+        body.append('date',       td.dataset.date);
+        body.append('period',     td.dataset.period);
+        if (ALLOC_UNIT_ID) body.append('unit_id', ALLOC_UNIT_ID);
+
+        const res  = await fetch(ALLOC_STORE_URL, {method:'POST', body});
+        const json = await res.json();
+        if (json.ok) addAllocBadge(td, json.id, json.name, this.dataset.userId);
+    });
+});
+
+document.addEventListener('click', function(e) {
+    if (picker.style.display === 'none') return;
+    if (!picker.contains(e.target) && !e.target.closest('.alloc-add-btn')) closePicker();
 });
 </script>
 @endif
@@ -615,22 +796,34 @@ document.querySelectorAll('.alloc-remove-btn').forEach(btn => {
     left: 0 !important;
     z-index: 2;
 }
-thead .col-sticky-left            { background: #212529 !important; }
-tbody .col-sticky-left            { background: #fff !important; }
-tfoot .col-sticky-left            { background: #e2e3e5 !important; }
+thead .col-sticky-left  { background: #212529 !important; }
+tbody .col-sticky-left  { background: #fff    !important; }
+tfoot .col-sticky-left  { background: #e2e3e5 !important; }
 
 .col-sticky-right {
     position: sticky !important;
     right: 0 !important;
     z-index: 2;
 }
-thead .col-sticky-right           { background: #212529 !important; }
-tbody .col-sticky-right           { background: #fff !important; }
-tfoot .col-sticky-right           { background: #e2e3e5 !important; }
+thead .col-sticky-right { background: #212529 !important; }
+tbody .col-sticky-right { background: #fff    !important; }
+tfoot .col-sticky-right { background: #e2e3e5 !important; }
+
+/* Board: coluna Estação sticky */
+.board-table .board-col-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+}
+.board-table thead .board-col-sticky { background: #f8f9fa; z-index: 3; }
 
 .alloc-drop-cell.alloc-drop-hover { background: #cfe2ff !important; outline: 2px dashed #0d6efd; }
-.alloc-employee[draggable="true"] { cursor: grab; }
-.alloc-employee[draggable="true"]:active span { opacity: .6; }
+.alloc-employee[draggable="true"]  { cursor: grab; }
+.alloc-employee[draggable="true"]:active { opacity: .6; }
+.alloc-badge[draggable="true"]:active    { opacity: .4; }
+.alloc-add-btn { opacity: .55; transition: opacity .15s; }
+.alloc-add-btn:hover { opacity: 1; }
 </style>
 @endpush
 @endsection
