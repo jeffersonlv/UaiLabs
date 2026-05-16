@@ -5,16 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\PurchaseItem;
 use App\Models\Unit;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 
 class PurchaseItemController extends Controller
 {
     public function index(Request $request)
     {
-        $user   = auth()->user();
-        $filter = $request->input('filter', 'all');
-        $today  = Carbon::today();
-        $start  = $today->copy()->subDays(6);
+        $user    = auth()->user();
+        $filter  = $request->input('filter', 'all');
+        $sort    = $request->input('sort', 'quarter');
+        $dir     = $request->input('dir', 'desc');
+        $perPage = 15;
+        $today   = Carbon::today();
+        $start   = $today->copy()->subDays(6);
 
         $recent = PurchaseItem::with('unit')
             ->whereBetween('requested_at', [$start, $today])
@@ -40,9 +44,28 @@ class PurchaseItemController extends Controller
             ->orderBy('name')
             ->get();
 
-        $stats = $this->buildStats($user->company_id, $today);
+        $allStats = collect($this->buildStats($user->company_id, $today));
 
-        return view('purchase-items.index', compact('recent', 'oldPending', 'days', 'units', 'filter', 'stats'));
+        $allowedSorts = ['name', 'week', 'month', 'quarter', 'avg_days', 'days_until'];
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'quarter';
+        }
+        $dir = $dir === 'asc' ? 'asc' : 'desc';
+
+        $allStats = $dir === 'asc'
+            ? $allStats->sortBy(fn($r) => $r[$sort] ?? PHP_INT_MAX)->values()
+            : $allStats->sortByDesc(fn($r) => $r[$sort] ?? PHP_INT_MIN)->values();
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $stats = new LengthAwarePaginator(
+            $allStats->slice(($currentPage - 1) * $perPage, $perPage)->values(),
+            $allStats->count(),
+            $perPage,
+            $currentPage,
+            ['path' => route('purchase-items.index'), 'query' => $request->only(['filter', 'sort', 'dir'])]
+        );
+
+        return view('purchase-items.index', compact('recent', 'oldPending', 'days', 'units', 'filter', 'stats', 'sort', 'dir'));
     }
 
     public function suggestions(Request $request)
@@ -149,9 +172,6 @@ class PurchaseItemController extends Controller
                 'days_until'    => $nextDate ? (int) $today->diffInDays($nextDate, false) : null,
             ];
         }
-
-        // Sort by quarter count desc
-        usort($rows, fn($a, $b) => $b['quarter'] <=> $a['quarter']);
 
         return $rows;
     }

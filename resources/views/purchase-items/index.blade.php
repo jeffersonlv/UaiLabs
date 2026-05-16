@@ -143,23 +143,60 @@
 @endif
 
 {{-- Board de quantitativos --}}
-@if(!empty($stats))
+@if($stats->total() > 0)
+@php
+    $sortUrl = fn(string $col) => route('purchase-items.index', array_merge(
+        request()->only(['filter']),
+        ['sort' => $col, 'dir' => ($sort === $col && $dir === 'desc') ? 'asc' : 'desc', 'page' => 1]
+    ));
+    $sortIcon = function(string $col) use ($sort, $dir): string {
+        if ($sort !== $col) return '<i class="bi bi-arrow-down-up text-muted opacity-50 ms-1" style="font-size:.7rem"></i>';
+        return $dir === 'asc'
+            ? '<i class="bi bi-arrow-up ms-1" style="font-size:.75rem"></i>'
+            : '<i class="bi bi-arrow-down ms-1" style="font-size:.75rem"></i>';
+    };
+@endphp
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
         <i class="bi bi-bar-chart-line text-primary"></i>
         <span class="fw-semibold">Histórico de Compras</span>
         <small class="text-muted">(últimos 90 dias)</small>
+        <small class="text-muted ms-auto">{{ $stats->total() }} produtos</small>
     </div>
     <div class="table-responsive">
         <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Produto</th>
-                    <th class="text-center" title="Últimos 7 dias">Semana</th>
-                    <th class="text-center" title="Últimos 30 dias">Mês</th>
-                    <th class="text-center" title="Últimos 90 dias">Trimestre</th>
-                    <th class="text-center">Média (dias)</th>
-                    <th class="text-center">Próxima compra</th>
+                    <th>
+                        <a href="{{ $sortUrl('name') }}" class="text-decoration-none text-dark">
+                            Produto {!! $sortIcon('name') !!}
+                        </a>
+                    </th>
+                    <th class="text-center" title="Últimos 7 dias">
+                        <a href="{{ $sortUrl('week') }}" class="text-decoration-none text-dark">
+                            Semana {!! $sortIcon('week') !!}
+                        </a>
+                    </th>
+                    <th class="text-center" title="Últimos 30 dias">
+                        <a href="{{ $sortUrl('month') }}" class="text-decoration-none text-dark">
+                            Mês {!! $sortIcon('month') !!}
+                        </a>
+                    </th>
+                    <th class="text-center" title="Últimos 90 dias">
+                        <a href="{{ $sortUrl('quarter') }}" class="text-decoration-none text-dark">
+                            Trimestre {!! $sortIcon('quarter') !!}
+                        </a>
+                    </th>
+                    <th class="text-center">
+                        <a href="{{ $sortUrl('avg_days') }}" class="text-decoration-none text-dark">
+                            Média (dias) {!! $sortIcon('avg_days') !!}
+                        </a>
+                    </th>
+                    <th class="text-center">
+                        <a href="{{ $sortUrl('days_until') }}" class="text-decoration-none text-dark">
+                            Próxima compra {!! $sortIcon('days_until') !!}
+                        </a>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -201,6 +238,11 @@
             </tbody>
         </table>
     </div>
+    @if($stats->hasPages())
+    <div class="card-footer bg-white d-flex justify-content-center py-2">
+        {{ $stats->links() }}
+    </div>
+    @endif
 </div>
 @endif
 
