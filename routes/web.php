@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ClockController;
@@ -33,6 +34,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/completion-chart', [DashboardController::class, 'completionChart'])->name('dashboard.chart');
         Route::get('/password/edit', fn() => view('auth.password-edit'))->name('password.edit');
+        Route::get('/profile/pin', [ProfileController::class, 'editPin'])->name('profile.pin.edit');
+        Route::put('/profile/pin', [ProfileController::class, 'updatePin'])->name('profile.pin.update');
         Route::get('/activity-log', [AuditLogController::class, 'index'])->name('audit-log.index');
 
         // ── Módulo: Rotinas Operacionais ─────────────────────────
@@ -59,12 +62,14 @@ Route::middleware(['auth', 'active'])->group(function () {
         // ── Módulo: Solicitação de Compras ────────────────────────
         Route::middleware('module:purchase_requests')->group(function () {
             Route::get('/purchase-items', [PurchaseItemController::class, 'index'])->name('purchase-items.index');
+            Route::get('/purchase-items/suggestions', [PurchaseItemController::class, 'suggestions'])->name('purchase-items.suggestions');
             Route::post('/purchase-items', [PurchaseItemController::class, 'store'])->name('purchase-items.store');
             Route::patch('/purchase-items/{purchaseItem}/toggle', [PurchaseItemController::class, 'toggle'])->name('purchase-items.toggle');
         });
 
         // ── Módulo: Escala de Funcionários ────────────────────────
         Route::middleware('module:shifts')->group(function () {
+            Route::get('/shifts', fn() => redirect()->route('shifts.calendar'))->name('shifts.index');
             Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
             Route::get('/shifts/calendar', [ShiftController::class, 'calendar'])->name('shifts.calendar');
             Route::get('/shifts/timesheet', [ShiftController::class, 'timesheet'])->name('shifts.timesheet');

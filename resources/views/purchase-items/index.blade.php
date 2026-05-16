@@ -9,9 +9,11 @@
             @csrf
             <div class="flex-grow-1" style="min-width: 200px">
                 <label class="form-label small mb-1 fw-semibold">Produto</label>
-                <input type="text" name="name" class="form-control"
+                <input type="text" name="name" id="productName" class="form-control"
                        placeholder="Ex: Café, Detergente, Papel toalha..."
-                       required autofocus autocomplete="off">
+                       required autofocus autocomplete="off"
+                       list="productSuggestions">
+                <datalist id="productSuggestions"></datalist>
             </div>
             @if($units->count() > 1)
             <div style="min-width: 160px">
@@ -109,7 +111,7 @@
 
 {{-- Pendências antigas --}}
 @if($oldPending->isNotEmpty())
-<div class="card border-0 shadow-sm border-start border-warning border-3">
+<div class="card border-0 shadow-sm border-start border-warning border-3 mb-4">
     <div class="card-header bg-white d-flex align-items-center gap-2">
         <i class="bi bi-exclamation-circle text-warning"></i>
         <span class="fw-semibold">Pendências antigas</span>
@@ -139,5 +141,89 @@
     </ul>
 </div>
 @endif
+
+{{-- Board de quantitativos --}}
+@if(!empty($stats))
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
+        <i class="bi bi-bar-chart-line text-primary"></i>
+        <span class="fw-semibold">Histórico de Compras</span>
+        <small class="text-muted">(últimos 90 dias)</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Produto</th>
+                    <th class="text-center" title="Últimos 7 dias">Semana</th>
+                    <th class="text-center" title="Últimos 30 dias">Mês</th>
+                    <th class="text-center" title="Últimos 90 dias">Trimestre</th>
+                    <th class="text-center">Média (dias)</th>
+                    <th class="text-center">Próxima compra</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($stats as $row)
+                <tr>
+                    <td class="small fw-semibold align-middle">{{ $row['name'] }}</td>
+                    <td class="text-center align-middle">
+                        @if($row['week'] > 0)
+                            <span class="badge bg-primary">{{ $row['week'] }}x</span>
+                        @else
+                            <span class="text-muted small">—</span>
+                        @endif
+                    </td>
+                    <td class="text-center align-middle">
+                        <span class="badge bg-secondary">{{ $row['month'] }}x</span>
+                    </td>
+                    <td class="text-center align-middle">
+                        <span class="badge bg-dark">{{ $row['quarter'] }}x</span>
+                    </td>
+                    <td class="text-center align-middle small text-muted">
+                        {{ $row['avg_days'] !== null ? $row['avg_days'] . ' dias' : '—' }}
+                    </td>
+                    <td class="text-center align-middle small">
+                        @if($row['days_until'] !== null)
+                            @if($row['days_until'] > 0)
+                                <span class="text-success fw-semibold">em {{ $row['days_until'] }} dias</span>
+                                <div class="text-muted" style="font-size:.7rem">{{ $row['next_date']->format('d/m') }}</div>
+                            @elseif($row['days_until'] === 0)
+                                <span class="text-warning fw-semibold">hoje</span>
+                            @else
+                                <span class="text-danger fw-semibold">{{ abs($row['days_until']) }}d atrasado</span>
+                            @endif
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
+<script>
+(function () {
+    const input      = document.getElementById('productName');
+    const datalist   = document.getElementById('productSuggestions');
+    const suggestUrl = '{{ route("purchase-items.suggestions") }}';
+    let   timer      = null;
+
+    input.addEventListener('input', function () {
+        clearTimeout(timer);
+        const q = this.value.trim();
+        if (q.length < 2) { datalist.innerHTML = ''; return; }
+        timer = setTimeout(async () => {
+            try {
+                const res  = await fetch(suggestUrl + '?q=' + encodeURIComponent(q));
+                const list = await res.json();
+                datalist.innerHTML = list.map(n => `<option value="${n}">`).join('');
+            } catch {}
+        }, 250);
+    });
+})();
+</script>
 
 @endsection

@@ -40,7 +40,24 @@ class PurchaseItemController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('purchase-items.index', compact('recent', 'oldPending', 'days', 'units', 'filter'));
+        $stats = $this->buildStats($user->company_id, $today);
+
+        return view('purchase-items.index', compact('recent', 'oldPending', 'days', 'units', 'filter', 'stats'));
+    }
+
+    public function suggestions(Request $request)
+    {
+        $q    = $request->input('q', '');
+        $user = auth()->user();
+
+        $names = PurchaseItem::where('company_id', $user->company_id)
+            ->when($q, fn($query) => $query->where('name', 'like', $q . '%'))
+            ->orderBy('name')
+            ->distinct()
+            ->pluck('name')
+            ->take(20);
+
+        return response()->json($names);
     }
 
     public function store(Request $request)
@@ -83,5 +100,59 @@ class PurchaseItemController extends Controller
         }
 
         return back();
+    }
+
+    private function buildStats(int $companyId, Carbon $today): array
+    {
+        $weekAgo     = $today->copy()->subDays(6);
+        $monthAgo    = $today->copy()->subDays(29);
+        $quarterAgo  = $today->copy()->subDays(89);
+
+        // All items in the last 90 days to compute counts and intervals
+        $all = PurchaseItem::where('company_id', $companyId)
+            ->where('requested_at', '>=', $quarterAgo)
+            ->orderBy('name')
+            ->orderBy('requested_at')
+            ->get(['name', 'requested_at']);
+
+        $grouped = $all->groupBy('name');
+
+        $rows = [];
+        foreach ($grouped as $name => $items) {
+            $dates = $items->pluck('requested_at')->map(fn($d) => Carbon::parse($d)->toDateString())->unique()->sort()->values();
+
+            $weekCount    = $items->filter(fn($i) => Carbon::parse($i->requested_at)->gte($weekAgo))->count();
+            $monthCount   = $items->filter(fn($i) => Carbon::parse($i->requested_at)->gte($monthAgo))->count();
+            $quarterCount = $items->count();
+
+            // Average interval between consecutive dates
+            $avgDays = null;
+            $nextDate = null;
+            if ($dates->count() >= 2) {
+                $intervals = [];
+                for ($i = 1; $i < $dates->count(); $i++) {
+                    $intervals[] = Carbon::parse($dates[$i - 1])->diffInDays(Carbon::parse($dates[$i]));
+                }
+                $avgDays = round(array_sum($intervals) / count($intervals));
+
+                $lastDate = Carbon::parse($dates->last());
+                $nextDate = $lastDate->copy()->addDays($avgDays);
+            }
+
+            $rows[] = [
+                'name'          => $name,
+                'week'          => $weekCount,
+                'month'         => $monthCount,
+                'quarter'       => $quarterCount,
+                'avg_days'      => $avgDays,
+                'next_date'     => $nextDate,
+                'days_until'    => $nextDate ? (int) $today->diffInDays($nextDate, false) : null,
+            ];
+        }
+
+        // Sort by quarter count desc
+        usort($rows, fn($a, $b) => $b['quarter'] <=> $a['quarter']);
+
+        return $rows;
     }
 }

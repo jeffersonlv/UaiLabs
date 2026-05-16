@@ -198,7 +198,10 @@
                         <div class="text-muted" style="font-size:.73rem">{{ ucfirst($authUser->role) }}</div>
                     </li>
                     <li><a class="dropdown-item" href="{{ route('password.edit') }}">
-                        <i class="bi bi-key me-2"></i>Redefinir senha
+                        <i class="bi bi-key me-2"></i>Alterar senha
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ route('profile.pin.edit') }}">
+                        <i class="bi bi-shield-lock me-2"></i>Alterar PIN
                     </a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
@@ -385,7 +388,11 @@
 
         <a class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 text-decoration-none mb-1"
            style="color:rgba(255,255,255,.8);font-size:.9rem" href="{{ route('password.edit') }}">
-            <i class="bi bi-key" style="width:1.2rem;text-align:center"></i>Redefinir senha
+            <i class="bi bi-key" style="width:1.2rem;text-align:center"></i>Alterar senha
+        </a>
+        <a class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 text-decoration-none mb-1"
+           style="color:rgba(255,255,255,.8);font-size:.9rem" href="{{ route('profile.pin.edit') }}">
+            <i class="bi bi-shield-lock" style="width:1.2rem;text-align:center"></i>Alterar PIN
         </a>
 
         <form method="POST" action="{{ route('logout') }}">
