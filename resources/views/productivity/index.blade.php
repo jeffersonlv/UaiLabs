@@ -25,6 +25,12 @@
 
 @section('content')
 
+@php
+    $isToday  = !$isRange && $start->isToday();
+    $isMonth  = !$isRange && $start->isSameDay($start->copy()->startOfMonth()) && $end->isSameDay($start->copy()->endOfMonth());
+    $isCurMon = $isMonth && $start->isSameMonth(now());
+@endphp
+
 {{-- ── Cabeçalho ─────────────────────────────────────────── --}}
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
@@ -32,37 +38,88 @@
         <span class="text-muted small">{{ auth()->user()->company?->name }}</span>
     </div>
     <span class="text-muted small">
-        {{ $start->translatedFormat('F Y') }}
+        @if($isRange)
+            {{ $start->format('d/m/Y') }} — {{ $end->format('d/m/Y') }}
+            <span class="badge bg-secondary ms-1">{{ $days }} {{ $days === 1 ? 'dia' : 'dias' }}</span>
+        @elseif($isToday)
+            {{ $start->format('d/m/Y') }} <span class="badge bg-primary ms-1">hoje</span>
+        @elseif($isMonth)
+            {{ $start->translatedFormat('F Y') }}
+            @if($isCurMon)<span class="badge bg-secondary ms-1">mês atual</span>@endif
+        @else
+            {{ $start->format('d/m/Y') }}
+        @endif
     </span>
 </div>
 
 {{-- ── Filtros ───────────────────────────────────────────── --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body py-3">
-        <form method="GET" action="{{ route('productivity.index') }}" class="row g-2 align-items-end">
-            <div class="col-auto">
-                <label class="form-label small fw-semibold mb-1">Mês</label>
-                <input type="month" name="month" class="form-control form-control-sm" value="{{ $month }}">
+        <form method="GET" action="{{ route('productivity.index') }}" class="row g-2 align-items-end flex-wrap">
+
+            {{-- Atalhos rápidos --}}
+            <div class="col-auto d-flex gap-1">
+                <a href="{{ route('productivity.index', array_filter(['unit_id' => $unitId])) }}"
+                   class="btn btn-sm {{ $isCurMon && !$unitId ? 'btn-primary' : 'btn-outline-primary' }}">
+                    Este mês
+                </a>
+                <a href="{{ route('productivity.index', array_filter(['date' => now()->toDateString(), 'unit_id' => $unitId])) }}"
+                   class="btn btn-sm {{ $isToday ? 'btn-primary' : 'btn-outline-secondary' }}">
+                    Hoje
+                </a>
             </div>
+
+            {{-- Data única --}}
+            <div class="col-auto d-flex gap-1 align-items-end">
+                <div>
+                    <label class="form-label form-label-sm mb-1 text-muted">Data única</label>
+                    <input type="date" name="date" class="form-control form-control-sm"
+                           value="{{ (!$isRange && !$isCurMon) ? $start->toDateString() : '' }}"
+                           max="{{ now()->toDateString() }}">
+                </div>
+                <button type="submit" name="_mode" value="date" class="btn btn-sm btn-outline-secondary">Ver</button>
+            </div>
+
+            <div class="col-auto text-muted small px-1 align-self-end pb-1">ou</div>
+
+            {{-- Range --}}
+            <div class="col-auto d-flex gap-1 align-items-end">
+                <div>
+                    <label class="form-label form-label-sm mb-1 text-muted">De</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm"
+                           value="{{ $isRange ? $start->toDateString() : '' }}"
+                           max="{{ now()->toDateString() }}">
+                </div>
+                <div>
+                    <label class="form-label form-label-sm mb-1 text-muted">Até</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm"
+                           value="{{ $isRange ? $end->toDateString() : '' }}"
+                           max="{{ now()->toDateString() }}">
+                </div>
+                <button type="submit" name="_mode" value="range" class="btn btn-sm btn-outline-secondary">Ver período</button>
+            </div>
+
+            {{-- Mês --}}
+            <div class="col-auto d-flex gap-1 align-items-end">
+                <div>
+                    <label class="form-label form-label-sm mb-1 text-muted">Mês</label>
+                    <input type="month" name="month_pick" id="monthPick" class="form-control form-control-sm"
+                           value="{{ $isMonth ? $start->format('Y-m') : '' }}">
+                </div>
+                <button type="button" id="btnMonth" class="btn btn-sm btn-outline-secondary">Ver mês</button>
+            </div>
+
             @if($units->count() > 1)
-            <div class="col-auto">
-                <label class="form-label small fw-semibold mb-1">Unidade</label>
+            <div class="col-auto align-self-end">
                 <select name="unit_id" class="form-select form-select-sm" style="min-width:160px">
-                    <option value="">Todas</option>
+                    <option value="">Todas as unidades</option>
                     @foreach($units as $unit)
                         <option value="{{ $unit->id }}" {{ $unitId == $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
                     @endforeach
                 </select>
             </div>
             @endif
-            <div class="col-auto">
-                <button class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Filtrar</button>
-            </div>
-            @if($month !== now()->format('Y-m') || $unitId)
-            <div class="col-auto">
-                <a href="{{ route('productivity.index') }}" class="btn btn-outline-secondary btn-sm">Limpar</a>
-            </div>
-            @endif
+
         </form>
     </div>
 </div>
@@ -102,7 +159,7 @@
         <div class="card border-0 shadow-sm kpi-card kpi-overtime h-100">
             <div class="card-body">
                 <div class="text-muted small mb-1"><i class="bi bi-clock-history me-1"></i>Horas extras acum.</div>
-                <div class="fs-3 fw-bold text-purple" style="color:#6f42c1">{{ $kpi['total_overtime_h'] }}h</div>
+                <div class="fs-3 fw-bold" style="color:#6f42c1">{{ $kpi['total_overtime_h'] }}h</div>
                 <div class="text-muted" style="font-size:.75rem">
                     {{ $kpi['total_worked_h'] }}h trabalhadas /
                     {{ $kpi['total_scheduled_h'] }}h escaladas
@@ -149,10 +206,10 @@
                         @php
                             $presence = $e['presence_rate'];
                             $dotColor = match(true) {
-                                $presence === null         => '#adb5bd',
-                                $presence >= 90            => '#198754',
-                                $presence >= 70            => '#fd7e14',
-                                default                    => '#dc3545',
+                                $presence === null => '#adb5bd',
+                                $presence >= 90   => '#198754',
+                                $presence >= 70   => '#fd7e14',
+                                default           => '#dc3545',
                             };
                             $deltaMins = $e['delta_minutes'];
                             $deltaClass = $deltaMins > 0 ? 'delta-pos' : ($deltaMins < 0 ? 'delta-neg' : 'delta-neu');
@@ -234,6 +291,22 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
+// ── Mês picker → redireciona com date_from/date_to do mês ──
+document.getElementById('btnMonth')?.addEventListener('click', function () {
+    const val = document.getElementById('monthPick').value;
+    if (!val) return;
+    const [y, m] = val.split('-').map(Number);
+    const from = new Date(y, m - 1, 1);
+    const to   = new Date(y, m, 0);
+    const fmt  = d => d.toISOString().slice(0, 10);
+    const url  = new URL(window.location.href);
+    url.searchParams.set('date_from', fmt(from));
+    url.searchParams.set('date_to',   fmt(to));
+    url.searchParams.delete('date');
+    url.searchParams.delete('month_pick');
+    window.location.href = url.toString();
+});
+
 // ── Scatter chart ────────────────────────────────────────
 @php
     $scatterData = $employees->map(fn($e) => [
@@ -319,8 +392,8 @@
             headers.forEach(h => h.classList.remove('asc', 'desc'));
             th.classList.add(currentDir);
 
-            const body  = document.getElementById('rankingBody');
-            const rows  = Array.from(body.querySelectorAll('tr'));
+            const body = document.getElementById('rankingBody');
+            const rows = Array.from(body.querySelectorAll('tr'));
 
             rows.sort((a, b) => {
                 const va = parseFloat(a.dataset[col]);
@@ -335,7 +408,6 @@
         });
     });
 
-    // Initial rank numbers
     document.querySelectorAll('#rankingBody tr').forEach((row, i) => {
         row.querySelector('.rank-num').textContent = i + 1;
     });

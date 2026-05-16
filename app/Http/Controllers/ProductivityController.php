@@ -18,11 +18,26 @@ class ProductivityController extends Controller
         abort_unless($authUser->isAdminOrAbove() && ! $authUser->isSuperAdmin(), 403);
 
         $companyId = $authUser->company_id;
-        $month     = $request->input('month', now()->format('Y-m'));
         $unitId    = $request->input('unit_id');
-        $start     = Carbon::parse($month)->startOfMonth();
-        $end       = $start->copy()->endOfMonth();
 
+        // ── Período ──────────────────────────────────────────────
+        $isRange = $request->filled('date_from') && $request->filled('date_to');
+
+        if ($isRange) {
+            $start = Carbon::parse($request->date_from)->startOfDay();
+            $end   = Carbon::parse($request->date_to)->endOfDay();
+            if ($start->gt($end)) [$start, $end] = [$end, $start];
+        } elseif ($request->filled('date')) {
+            $start = Carbon::parse($request->date)->startOfDay();
+            $end   = Carbon::parse($request->date)->endOfDay();
+        } else {
+            $start = now()->startOfMonth()->startOfDay();
+            $end   = now()->endOfMonth()->endOfDay();
+        }
+
+        $days = max(1, $start->copy()->startOfDay()->diffInDays($end->copy()->startOfDay()) + 1);
+
+        // ── Usuários ─────────────────────────────────────────────
         $units = Unit::where('company_id', $companyId)->where('active', true)->orderBy('name')->get();
 
         $usersQuery = User::where('company_id', $companyId)
@@ -36,7 +51,7 @@ class ProductivityController extends Controller
 
         $users = $usersQuery->get();
 
-        // Tasks completed by user in period
+        // ── Tarefas concluídas por usuário no período ─────────────
         $taskStats = TaskOccurrence::where('company_id', $companyId)
             ->whereNotNull('completed_by')
             ->where('status', 'DONE')
@@ -45,13 +60,14 @@ class ProductivityController extends Controller
             ->groupBy('completed_by')
             ->get()->keyBy('user_id');
 
-        // Purchase items requested by user in period
+        // ── Compras solicitadas por usuário no período ────────────
         $purchaseStats = PurchaseItem::where('company_id', $companyId)
             ->whereBetween('requested_at', [$start->toDateString(), $end->toDateString()])
             ->selectRaw('created_by as user_id, COUNT(*) as purchase_count')
             ->groupBy('created_by')
             ->get()->keyBy('user_id');
 
+        // ── Horas escala + ponto por usuário ─────────────────────
         $service = new TimeCalculationService;
 
         $employees = $users->map(function ($user) use ($service, $start, $end, $taskStats, $purchaseStats) {
@@ -76,16 +92,17 @@ class ProductivityController extends Controller
         $withPresence = $employees->whereNotNull('presence_rate');
 
         $kpi = [
-            'avg_presence'     => $withPresence->isNotEmpty() ? round($withPresence->avg('presence_rate')) : null,
-            'total_tasks'      => $employees->sum('tasks_done'),
-            'total_purchases'  => $employees->sum('purchase_count'),
-            'total_overtime_h' => round($employees->sum('overtime_minutes') / 60, 1),
-            'total_scheduled_h'=> $employees->sum('scheduled_hours'),
-            'total_worked_h'   => $employees->sum('worked_hours'),
+            'avg_presence'      => $withPresence->isNotEmpty() ? round($withPresence->avg('presence_rate')) : null,
+            'total_tasks'       => $employees->sum('tasks_done'),
+            'total_purchases'   => $employees->sum('purchase_count'),
+            'total_overtime_h'  => round($employees->sum('overtime_minutes') / 60, 1),
+            'total_scheduled_h' => $employees->sum('scheduled_hours'),
+            'total_worked_h'    => $employees->sum('worked_hours'),
         ];
 
         return view('productivity.index', compact(
-            'employees', 'units', 'unitId', 'month', 'start', 'kpi'
+            'employees', 'units', 'unitId', 'kpi',
+            'start', 'end', 'isRange', 'days'
         ));
     }
 }
