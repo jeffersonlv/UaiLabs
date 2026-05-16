@@ -16,6 +16,7 @@ class PurchaseItemController extends Controller
         $filter  = $request->input('filter', 'all');
         $sort    = $request->input('sort', 'quarter');
         $dir     = $request->input('dir', 'desc');
+        $search  = trim($request->input('q', ''));
         $perPage = 15;
         $today   = Carbon::today();
         $start   = $today->copy()->subDays(6);
@@ -46,6 +47,10 @@ class PurchaseItemController extends Controller
 
         $allStats = collect($this->buildStats($user->company_id, $today));
 
+        if ($search !== '') {
+            $allStats = $allStats->filter(fn($r) => stripos($r['name'], $search) !== false)->values();
+        }
+
         $allowedSorts = ['name', 'week', 'month', 'quarter', 'avg_days', 'days_until'];
         if (!in_array($sort, $allowedSorts)) {
             $sort = 'quarter';
@@ -62,10 +67,10 @@ class PurchaseItemController extends Controller
             $allStats->count(),
             $perPage,
             $currentPage,
-            ['path' => route('purchase-items.index'), 'query' => $request->only(['filter', 'sort', 'dir'])]
+            ['path' => route('purchase-items.index'), 'query' => $request->only(['filter', 'sort', 'dir', 'q'])]
         );
 
-        return view('purchase-items.index', compact('recent', 'oldPending', 'days', 'units', 'filter', 'stats', 'sort', 'dir'));
+        return view('purchase-items.index', compact('recent', 'oldPending', 'days', 'units', 'filter', 'stats', 'sort', 'dir', 'search'));
     }
 
     public function suggestions(Request $request)

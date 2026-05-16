@@ -157,11 +157,19 @@
     };
 @endphp
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
+    <div class="card-header bg-white d-flex align-items-center gap-2 py-2 flex-wrap">
         <i class="bi bi-bar-chart-line text-primary"></i>
         <span class="fw-semibold">Histórico de Compras</span>
         <small class="text-muted">(últimos 90 dias)</small>
-        <small class="text-muted ms-auto">{{ $stats->total() }} produtos</small>
+        <form method="GET" action="{{ route('purchase-items.index') }}" class="ms-auto d-flex gap-1">
+            @foreach(request()->only(['filter','sort','dir']) as $k => $v)
+                <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+            @endforeach
+            <input type="search" name="q" class="form-control form-control-sm" style="width:180px"
+                   placeholder="Buscar produto…" value="{{ $search }}">
+            <button class="btn btn-outline-secondary btn-sm" type="submit">Buscar</button>
+        </form>
+        <small class="text-muted">{{ $stats->total() }} produtos</small>
     </div>
     <div class="table-responsive">
         <table class="table table-sm table-hover mb-0">
