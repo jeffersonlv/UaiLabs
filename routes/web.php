@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\ProductivityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CategoryController;
@@ -127,6 +128,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/support-requests/{supportRequest}', [SupportRequestController::class, 'show'])->name('support-requests.show');
         Route::post('/support-requests/{supportRequest}/notes', [SupportRequestController::class, 'addNote'])->name('support-requests.notes.store');
         Route::patch('/support-requests/{supportRequest}/close', [SupportRequestController::class, 'close'])->name('support-requests.close');
+
+        // ── Produtividade ────────────────────────────────────────
+        Route::middleware('admin')->group(function () {
+            Route::get('/productivity', [ProductivityController::class, 'index'])->name('productivity.index');
+        });
 
         // ── Log de atividades dedicado (admin+) ─────────────────
         Route::middleware('admin')->group(function () {

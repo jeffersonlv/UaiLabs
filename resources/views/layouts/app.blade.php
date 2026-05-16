@@ -65,6 +65,13 @@
                 <i class="bi bi-speedometer2 me-1"></i>Dashboard
             </a>
 
+            @if($authUser->isAdmin())
+            <a class="nav-link text-white px-2 py-2 rounded-2 {{ request()->routeIs('productivity.*') ? 'bg-white bg-opacity-10' : '' }}"
+               href="{{ route('productivity.index') }}" style="font-size:.875rem">
+                <i class="bi bi-graph-up-arrow me-1"></i>Produtividade
+            </a>
+            @endif
+
             {{-- Módulos dropdown --}}
             <div class="dropdown">
                 <button class="btn btn-link nav-link text-white px-2 py-2 rounded-2 dropdown-toggle
@@ -250,6 +257,14 @@
            style="color:rgba(255,255,255,.8);font-size:.9rem" href="{{ route('dashboard') }}">
             <i class="bi bi-speedometer2" style="width:1.2rem;text-align:center"></i>Dashboard
         </a>
+
+        @if($authUser->isAdmin())
+        <a class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 text-decoration-none mb-1
+                  {{ request()->routeIs('productivity.*') ? 'bg-white bg-opacity-10 text-white' : '' }}"
+           style="color:rgba(255,255,255,.8);font-size:.9rem" href="{{ route('productivity.index') }}">
+            <i class="bi bi-graph-up-arrow" style="width:1.2rem;text-align:center"></i>Produtividade
+        </a>
+        @endif
 
         <div class="px-2 pt-2 pb-1" style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3)">
             Módulos
