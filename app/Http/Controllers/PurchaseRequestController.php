@@ -86,20 +86,23 @@ class PurchaseRequestController extends Controller
         return back()->with('success', 'Status atualizado.');
     }
 
-    public function history()
+    public function history(Request $request)
     {
         $user    = auth()->user();
         $unitIds = $user->visibleUnitIds();
+        $search  = $request->input('q');
 
         $history = PurchaseRequest::with('user', 'unit', 'statusChangedBy')
             ->whereIn('status', PurchaseRequest::DONE_STATUSES)
             ->when($unitIds !== null, fn($q) => $q->where(fn($q2) =>
                 $q2->whereIn('unit_id', $unitIds)->orWhereNull('unit_id')
             ))
+            ->when($search, fn($q) => $q->where('product_name', 'like', "%{$search}%"))
             ->orderByDesc('status_changed_at')
-            ->paginate(30);
+            ->paginate(30)
+            ->withQueryString();
 
-        return view('purchase-requests.history', compact('history', 'user'));
+        return view('purchase-requests.history', compact('history', 'user', 'search'));
     }
 
     private function authorizeAccess(PurchaseRequest $pr): void

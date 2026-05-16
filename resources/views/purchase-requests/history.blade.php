@@ -5,6 +5,12 @@
     <h4 class="mb-0">Histórico de Compras</h4>
     <a href="{{ route('purchase-requests.index') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
 </div>
+<form method="GET" action="{{ route('purchase-requests.history') }}" class="mb-3">
+    <div class="input-group input-group-sm" style="max-width:320px">
+        <input type="search" name="q" class="form-control" placeholder="Buscar produto…" value="{{ $search ?? '' }}">
+        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+    </div>
+</form>
 <div class="card border-0 shadow-sm">
     <table class="table table-hover mb-0">
         <thead class="table-light">
